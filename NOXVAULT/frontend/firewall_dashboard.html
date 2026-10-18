@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT – Firewall Dashboard</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    :root {
+        --bg-main: #02030a;
+        --bg-panel: #050716;
+        --border-soft: #101426;
+        --neon-blue: #00aaff;
+        --neon-red: #ff3366;
+        --neon-yellow: #ffcc66;
+        --text-soft: #7f8ea3;
+        --text-main: #e0f4ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: radial-gradient(circle at top, #050816 0, #02030a 40%, #000 100%);
+        color: var(--text-main);
+        font-family: Consolas, monospace;
+    }
+
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        background: #050716;
+        border-bottom: 1px solid var(--border-soft);
+        box-shadow: 0 0 18px rgba(0, 170, 255, 0.25);
+    }
+    .top-bar-left h1 {
+        margin: 0;
+        font-size: 20px;
+        color: var(--neon-blue);
+    }
+    .top-bar-left small {
+        color: var(--text-soft);
+    }
+    .top-bar-right {
+        display: flex;
+        gap: 10px;
+    }
+    .top-btn {
+        background: #050716;
+        border: 1px solid #1b2338;
+        color: #9fb4d9;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: 0.2s;
+    }
+    .top-btn:hover {
+        border-color: var(--neon-blue);
+        color: var(--neon-blue);
+        box-shadow: 0 0 12px rgba(0, 170, 255, 0.35);
+    }
+
+    .layout {
+        display: flex;
+        height: calc(100vh - 54px);
+    }
+
+    .sidebar {
+        width: 250px;
+        background: #050716;
+        border-right: 1px solid var(--border-soft);
+        padding: 15px 10px;
+        overflow-y: auto;
+    }
+    .sidebar-title {
+        font-size: 13px;
+        color: var(--text-soft);
+        margin: 0 0 10px 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+        color: #9fb4d9;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.15s;
+    }
+    .nav-item i {
+        width: 18px;
+        text-align: center;
+        color: #4f6b8f;
+    }
+    .nav-item:hover {
+        background: #0a1022;
+        color: #d7e7ff;
+    }
+    .nav-item.active {
+        background: linear-gradient(90deg, #04101f, #041f3a);
+        color: #ffffff;
+        box-shadow: 0 0 14px rgba(0, 170, 255, 0.45);
+        border: 1px solid var(--neon-blue);
+    }
+    .nav-item.active i {
+        color: var(--neon-blue);
+    }
+
+    .content {
+        flex: 1;
+        padding: 18px 22px;
+        overflow-y: auto;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 15px;
+    }
+    .section-header h2 {
+        margin: 0;
+        font-size: 18px;
+        color: #e8f4ff;
+    }
+    .section-header span {
+        font-size: 12px;
+        color: var(--text-soft);
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .card {
+        background: radial-gradient(circle at top left, #07152a, #050716);
+        border-radius: 8px;
+        padding: 12px 14px;
+        border: 1px solid var(--border-soft);
+        box-shadow: 0 0 14px rgba(0, 0, 0, 0.6);
+    }
+    .card-label {
+        font-size: 11px;
+        color: var(--text-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .card-value {
+        font-size: 20px;
+        margin-top: 4px;
+    }
+    .card-pill {
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--neon-yellow);
+    }
+    .card-ok { color: #00ffaa; }
+    .card-warn { color: var(--neon-yellow); }
+    .card-bad { color: var(--neon-red); }
+
+    .panel {
+        background: var(--bg-panel);
+        border-radius: 8px;
+        border: 1px solid var(--border-soft);
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 0 14px rgba(0, 0, 0, 0.7);
+    }
+    .panel h3 {
+        margin: 0 0 10px 0;
+        font-size: 15px;
+        color: #e8f4ff;
+    }
+    .panel small {
+        color: var(--text-soft);
+        font-size: 11px;
+    }
+
+    .two-col {
+        display: grid;
+        grid-template-columns: 2fr 3fr;
+        gap: 14px;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        color: #c7d9f5;
+    }
+    .table th, .table td {
+        padding: 6px 8px;
+        border-bottom: 1px solid #11182b;
+    }
+    .table th {
+        text-align: left;
+        color: var(--text-soft);
+        font-weight: normal;
+        font-size: 11px;
+        text-transform: uppercase;
+    }
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+    }
+    .badge-high {
+        background: rgba(255, 51, 102, 0.15);
+        color: var(--neon-red);
+        border: 1px solid rgba(255, 51, 102, 0.5);
+    }
+    .badge-medium {
+        background: rgba(255, 204, 102, 0.15);
+        color: var(--neon-yellow);
+        border: 1px solid rgba(255, 204, 102, 0.5);
+    }
+    .badge-low {
+        background: rgba(0, 170, 255, 0.15);
+        color: var(--neon-blue);
+        border: 1px solid rgba(0, 170, 255, 0.5);
+    }
+
+    canvas {
+        background: #050716;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 0 18px rgba(0, 170, 255, 0.18);
+        margin-bottom: 10px;
+    }
+
+    .chart-glow {
+        animation: glowPulse 0.6s ease-out;
+    }
+    @keyframes glowPulse {
+        0% { box-shadow: 0 0 0px rgba(0,170,255,0.0); }
+        50% { box-shadow: 0 0 25px rgba(0,170,255,0.6); }
+        100% { box-shadow: 0 0 0px rgba(0,170,255,0.0); }
+    }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+    <div class="top-bar-left">
+        <h1>NOXVAULT – Firewall Dashboard</h1>
+        <small id="fw-meta">Loading firewall status…</small>
+    </div>
+    <div class="top-bar-right">
+        <button class="top-btn" id="btn-refresh"><i class="fa-solid fa-rotate"></i>Refresh</button>
+    </div>
+</div>
+
+<div class="layout">
+    <aside class="sidebar">
+        <p class="sidebar-title">Firewall Sections</p>
+
+        <div class="nav-item active" data-section="overview">
+            <i class="fa-solid fa-shield-halved"></i><span>Overview</span>
+        </div>
+        <div class="nav-item" data-section="rules">
+            <i class="fa-solid fa-list-check"></i><span>Rules & Open Ports</span>
+        </div>
+        <div class="nav-item" data-section="traffic">
+            <i class="fa-solid fa-wave-square"></i><span>Traffic Allowed vs Blocked</span>
+        </div>
+        <div class="nav-item" data-section="intrusion">
+            <i class="fa-solid fa-bug"></i><span>Intrusion & Dropped Events</span>
+        </div>
+        <div class="nav-item" data-section="dnsdhcp">
+            <i class="fa-solid fa-server"></i><span>DNS & DHCP</span>
+        </div>
+    </aside>
+
+    <main class="content">
+        <div id="section-container"></div>
+    </main>
+</div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+
+Chart.defaults.color = "#9fb4d9";
+Chart.defaults.borderColor = "rgba(0, 170, 255, 0.25)";
+Chart.defaults.font.family = "Consolas, monospace";
+
+async function getJSON(path) {
+    const res = await fetch(API_BASE + path);
+    if (!res.ok) throw new Error("Request failed: " + res.status);
+    return await res.json();
+}
+
+let trafficChart, portsChart, attackersChart, droppedChart;
+
+async function renderOverview() {
+    const fw = await getJSON("/dashboard/firewall");
+
+    document.getElementById("fw-meta").textContent =
+        `Status: ${fw.status} • Profile: ${fw.profile} • Last rule update: ${fw.last_rule_update}`;
+
+    const html = `
+        <div class="section-header">
+            <h2>Firewall Overview</h2>
+            <span>Global firewall posture and quick status</span>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">Firewall Status</div>
+                <div class="card-value ${fw.status === "Enabled" ? "card-ok" : "card-bad"}">${fw.status}</div>
+                <div class="card-pill">Profile: ${fw.profile}</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Default Inbound</div>
+                <div class="card-value card-bad">${fw.default_inbound}</div>
+                <div class="card-pill">Inbound policy</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Default Outbound</div>
+                <div class="card-value card-ok">${fw.default_outbound}</div>
+                <div class="card-pill">Outbound policy</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Events (Last Window)</div>
+                <div class="card-value">${fw.events.allowed + fw.events.blocked}</div>
+                <div class="card-pill">Allowed: ${fw.events.allowed} • Blocked: ${fw.events.blocked}</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="panel">
+                <h3>Open Ports Exposure</h3>
+                <small>Ports exposed by the firewall and their risk level.</small>
+                <canvas id="portsChart" height="180"></canvas>
+            </div>
+            <div class="panel">
+                <h3>Top Blocked IPs</h3>
+                <small>Sources most frequently blocked by firewall rules.</small>
+                <table class="table">
+                    <thead>
+                        <tr><th>IP Address</th><th>Blocked Events</th></tr>
+                    </thead>
+                    <tbody>
+                        ${fw.events.top_blocked_ips.map(ip => `
+                            <tr>
+                                <td>${ip.ip}</td>
+                                <td>${ip.count}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    document.getElementById("section-container").innerHTML = html;
+
+    const labels = fw.open_ports.map(p => p.port);
+    const risks = fw.open_ports.map(p => p.risk === "High" ? 3 : p.risk === "Medium" ? 2 : 1);
+    const ctx = document.getElementById("portsChart").getContext("2d");
+
+    if (portsChart) portsChart.destroy();
+    portsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Risk Level (1=Low, 3=High)",
+                data: risks,
+                backgroundColor: fw.open_ports.map(p => {
+                    if (p.risk === "High") return "rgba(255,51,102,0.7)";
+                    if (p.risk === "Medium") return "rgba(255,204,102,0.7)";
+                    return "rgba(0,170,255,0.7)";
+                })
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1, max: 3 } }
+            }
+        }
+    });
+    document.getElementById("portsChart").classList.add("chart-glow");
+    setTimeout(() => document.getElementById("portsChart").classList.remove("chart-glow"), 600);
+}
+
+async function renderRules() {
+    const fw = await getJSON("/dashboard/firewall");
+
+    const html = `
+        <div class="section-header">
+            <h2>Rules & Open Ports</h2>
+            <span>Firewall rule hits and exposed services</span>
+        </div>
+
+        <div class="panel">
+            <h3>Open Ports & Services</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Port</th>
+                        <th>Protocol</th>
+                        <th>Service</th>
+                        <th>Exposure</th>
+                        <th>Risk</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${fw.open_ports.map(p => `
+                        <tr>
+                            <td>${p.port}</td>
+                            <td>${p.protocol}</td>
+                            <td>${p.service}</td>
+                            <td>${p.exposure}</td>
+                            <td>
+                                <span class="badge ${
+                                    p.risk === "High" ? "badge-high" :
+                                    p.risk === "Medium" ? "badge-medium" : "badge-low"
+                                }">${p.risk}</span>
+                            </td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Rule Hits</h3>
+            <small>Most active firewall rules by hit count.</small>
+            <canvas id="rulesChart" height="180"></canvas>
+        </div>
+    `;
+    document.getElementById("section-container").innerHTML = html;
+
+    const labels = fw.rule_hits.map(r => r.rule);
+    const hits = fw.rule_hits.map(r => r.hits);
+    const ctx = document.getElementById("rulesChart").getContext("2d");
+
+    if (attackersChart) attackersChart.destroy();
+    attackersChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Rule Hits",
+                data: hits,
+                backgroundColor: "rgba(0,170,255,0.7)"
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            scales: {
+                x: { beginAtZero: true }
+            }
+        }
+    });
+    document.getElementById("rulesChart").classList.add("chart-glow");
+    setTimeout(() => document.getElementById("rulesChart").classList.remove("chart-glow"), 600);
+}
+
+async function renderTraffic() {
+    const fw = await getJSON("/dashboard/firewall");
+    const net = await getJSON("/dashboard/network-traffic");
+
+    const html = `
+        <div class="section-header">
+            <h2>Traffic Allowed vs Blocked</h2>
+            <span>Firewall decisions and protocol distribution</span>
+        </div>
+
+        <div class="two-col">
+            <div class="panel">
+                <h3>Allowed vs Blocked Events</h3>
+                <canvas id="trafficChart" height="180"></canvas>
+            </div>
+            <div class="panel">
+                <h3>Events by Protocol</h3>
+                <canvas id="protocolChart" height="180"></canvas>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Network Counters</h3>
+            <small>Raw interface counters from the host.</small>
+            <table class="table">
+                <tbody>
+                    <tr><th>Bytes Sent</th><td>${net.bytes_sent}</td></tr>
+                    <tr><th>Bytes Received</th><td>${net.bytes_recv}</td></tr>
+                    <tr><th>Packets Sent</th><td>${net.packets_sent}</td></tr>
+                    <tr><th>Packets Received</th><td>${net.packets_recv}</td></tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById("section-container").innerHTML = html;
+
+    const ctx1 = document.getElementById("trafficChart").getContext("2d");
+    const ctx2 = document.getElementById("protocolChart").getContext("2d");
+
+    if (trafficChart) trafficChart.destroy();
+    trafficChart = new Chart(ctx1, {
+        type: "doughnut",
+        data: {
+            labels: ["Allowed", "Blocked"],
+            datasets: [{
+                data: [fw.events.allowed, fw.events.blocked],
+                backgroundColor: ["rgba(0,255,170,0.7)", "rgba(255,51,102,0.7)"]
+            }]
+        },
+        options: {
+            cutout: "60%"
+        }
+    });
+
+    const labels = net.top_protocols.map(p => p.protocol);
+    const values = net.top_protocols.map(p => p.events);
+    if (portsChart) portsChart.destroy();
+    portsChart = new Chart(ctx2, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{
+                label: "Events",
+                data: values,
+                backgroundColor: "rgba(0,170,255,0.7)"
+            }]
+        },
+        options: {
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    document.getElementById("trafficChart").classList.add("chart-glow");
+    document.getElementById("protocolChart").classList.add("chart-glow");
+    setTimeout(() => {
+        document.getElementById("trafficChart").classList.remove("chart-glow");
+        document.getElementById("protocolChart").classList.remove("chart-glow");
+    }, 600);
+}
+
+async function renderIntrusion() {
+    const ids = await getJSON("/dashboard/ids");
+
+    const html = `
+        <div class="section-header">
+            <h2>Intrusion & Dropped Events</h2>
+            <span>IDS detections and impact</span>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">Intrusions (24h)</div>
+                <div class="card-value card-bad">${ids.total_intrusions_last_24h}</div>
+                <div class="card-pill">Critical: ${ids.by_severity.critical} • High: ${ids.by_severity.high}</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Medium / Low</div>
+                <div class="card-value card-warn">${ids.by_severity.medium + ids.by_severity.low}</div>
+                <div class="card-pill">Medium: ${ids.by_severity.medium} • Low: ${ids.by_severity.low}</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="panel">
+                <h3>Intrusion Timeline</h3>
+                <canvas id="idsTimeline" height="180"></canvas>
+            </div>
+            <div class="panel">
+                <h3>Top Signatures</h3>
+                <table class="table">
+                    <thead><tr><th>Signature</th><th>Count</th></tr></thead>
+                    <tbody>
+                        ${ids.top_signatures.map(s => `
+                            <tr><td>${s.name}</td><td>${s.count}</td></tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>MITRE ATT&CK Mapping</h3>
+            <table class="table">
+                <thead><tr><th>Technique</th><th>Count</th></tr></thead>
+                <tbody>
+                    ${ids.mitre_mapping.map(m => `
+                        <tr><td>${m.technique}</td><td>${m.count}</td></tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById("section-container").innerHTML = html;
+
+    const labels = ids.timeline.map(t => t.time);
+    const values = ids.timeline.map(t => t.count);
+    const ctx = document.getElementById("idsTimeline").getContext("2d");
+
+    if (droppedChart) droppedChart.destroy();
+    droppedChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label: "Intrusions",
+                data: values,
+                borderColor: "rgba(255,51,102,0.9)",
+                backgroundColor: "rgba(255,51,102,0.2)",
+                fill: true,
+                tension: 0.3
+            }]
+        }
+    });
+
+    document.getElementById("idsTimeline").classList.add("chart-glow");
+    setTimeout(() => document.getElementById("idsTimeline").classList.remove("chart-glow"), 600);
+}
+
+async function renderDnsDhcp() {
+    const netAudit = await getJSON("/api/network-audit");
+
+    const html = `
+        <div class="section-header">
+            <h2>DNS & DHCP Overview</h2>
+            <span>Core name resolution and address assignment details</span>
+        </div>
+
+        <div class="cards">
+            <div class="card">
+                <div class="card-label">DNS Servers</div>
+                <div class="card-value card-ok">${netAudit.dns_servers.length}</div>
+                <div class="card-pill">${netAudit.dns_servers.join(", ") || "None detected"}</div>
+            </div>
+            <div class="card">
+                <div class="card-label">DHCP Server</div>
+                <div class="card-value card-warn">${netAudit.default_gateway}</div>
+                <div class="card-pill">Often acts as DHCP in small networks</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Network Health Score</div>
+                <div class="card-value">${netAudit.network_health_score}</div>
+                <div class="card-pill">Risk: ${netAudit.risk_level}</div>
+            </div>
+            <div class="card">
+                <div class="card-label">Open Ports</div>
+                <div class="card-value">${netAudit.open_ports.length}</div>
+                <div class="card-pill">Interfaces: ${netAudit.interfaces.length}</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Interfaces</h3>
+            <small>Key network interfaces with IP and status.</small>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>IPv4</th>
+                        <th>MAC</th>
+                        <th>Status</th>
+                        <th>Speed (Mbps)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${netAudit.interfaces.map(i => `
+                        <tr>
+                            <td>${i.name}</td>
+                            <td>${i.ipv4 || "-"}</td>
+                            <td>${i.mac || "-"}</td>
+                            <td>${i.is_up ? "Up" : "Down"}</td>
+                            <td>${i.speed_mbps || "-"}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Routing & ARP Snapshot</h3>
+            <small>High‑level view of routing and ARP table (first few entries).</small>
+            <table class="table">
+                <tbody>
+                    <tr>
+                        <th>Default Gateway</th>
+                        <td>${netAudit.default_gateway}</td>
+                    </tr>
+                    <tr>
+                        <th>Sample Route</th>
+                        <td>${(netAudit.routing_table[0] || "").toString().slice(0, 120) || "N/A"}</td>
+                    </tr>
+                    <tr>
+                        <th>Sample ARP Entry</th>
+                        <td>${(netAudit.arp_table[0] || "").toString().slice(0, 120) || "N/A"}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+    document.getElementById("section-container").innerHTML = html;
+}
+
+const navItems = document.querySelectorAll(".nav-item");
+const sectionMap = {
+    "overview": renderOverview,
+    "rules": renderRules,
+    "traffic": renderTraffic,
+    "intrusion": renderIntrusion,
+    "dnsdhcp": renderDnsDhcp
+};
+
+navItems.forEach(item => {
+    item.addEventListener("click", () => {
+        navItems.forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        const key = item.dataset.section;
+        const fn = sectionMap[key];
+        if (fn) fn();
+    });
+});
+
+document.getElementById("btn-refresh").addEventListener("click", () => {
+    const active = document.querySelector(".nav-item.active");
+    if (!active) return;
+    const key = active.dataset.section;
+    const fn = sectionMap[key];
+    if (fn) fn();
+});
+
+setInterval(() => {
+    const active = document.querySelector(".nav-item.active");
+    if (!active) return;
+    const key = active.dataset.section;
+    const fn = sectionMap[key];
+    if (fn) fn();
+}, 5000);
+
+renderOverview();
+</script>
+</body>
+</html>

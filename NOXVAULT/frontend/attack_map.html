@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT – Real-Time Attack Map</title>
+
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  :root {
+    --bg: #020617;
+    --panel: #020617;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --incoming: #22c55e;
+    --outgoing: #3b82f6;
+    --blocked: #ef4444;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+  }
+
+  .top-bar {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #020617;
+    position: relative;
+    z-index: 1000;
+  }
+
+  h1 {
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: .16em;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .status-pill {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: #ef4444;
+  }
+
+  #map {
+    width: 100vw;
+    height: calc(100vh - 60px);
+  }
+
+  .legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(15,23,42,0.92);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    z-index: 1000;
+  }
+
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .legend-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+  }
+
+  .incoming { background: var(--incoming); }
+  .outgoing { background: var(--outgoing); }
+  .blocked { background: var(--blocked); }
+
+  .counter {
+    font-size: 11px;
+    margin-top: 6px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="top-bar">
+  <div>
+    <h1>NOXVAULT – Real-Time Attack Map</h1>
+    <div class="sub">Incoming attacks, outgoing connections, and blocked threats – live from NOXVAULT.</div>
+  </div>
+  <div class="status-pill">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">Connecting…</span>
+  </div>
+</div>
+
+<div id="map"></div>
+
+<div class="legend">
+  <div class="legend-row">
+    <div class="legend-dot incoming"></div> Incoming
+  </div>
+  <div class="legend-row">
+    <div class="legend-dot outgoing"></div> Outgoing
+  </div>
+  <div class="legend-row">
+    <div class="legend-dot blocked"></div> Blocked
+  </div>
+  <div class="counter">
+    Last 5 min: <span id="count-total">0</span> events
+  </div>
+</div>
+
+<script>
+  /* Backend endpoints */
+  const API_BASE = "http://127.0.0.1:8000";
+  const EVENTS_ENDPOINT = API_BASE + "/attack/events";
+  const FIREWALL_ENDPOINT = API_BASE + "/firewall/events";
+  const WS_ENDPOINT = "ws://127.0.0.1:8000/ws/attack-map";
+
+  const map = L.map("map", {
+    worldCopyJump: true,
+    minZoom: 2,
+    maxZoom: 8,
+  }).setView([20, 0], 2);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "",
+  }).addTo(map);
+
+  const layerIncoming = L.layerGroup().addTo(map);
+  const layerOutgoing = L.layerGroup().addTo(map);
+  const layerBlocked = L.layerGroup().addTo(map);
+
+  const eventsBuffer = [];
+
+  function colorForType(type) {
+    if (type === "incoming") return "#22c55e";
+    if (type === "outgoing") return "#3b82f6";
+    if (type === "blocked") return "#ef4444";
+    return "#e5e7eb";
+  }
+
+  function addEventToMap(ev) {
+    eventsBuffer.push(ev);
+    if (eventsBuffer.length > 500) eventsBuffer.shift();
+    document.getElementById("count-total").textContent = eventsBuffer.length;
+
+    const color = colorForType(ev.type);
+
+    const srcCircle = L.circleMarker([ev.src_lat, ev.src_lon], {
+      radius: 4,
+      color,
+      weight: 1,
+      fillColor: color,
+      fillOpacity: 0.8,
+    }).bindPopup(
+      `<b>${ev.type.toUpperCase()}</b><br>
+       ${ev.src_ip} (${ev.src_country}) → ${ev.dst_ip} (${ev.dst_country})<br>
+       Severity: ${ev.severity.toUpperCase()}<br>
+       ${ev.ts}`
+    );
+
+    const dstCircle = L.circleMarker([ev.dst_lat, ev.dst_lon], {
+      radius: 3,
+      color,
+      weight: 1,
+      fillColor: color,
+      fillOpacity: 0.5,
+    });
+
+    const line = L.polyline(
+      [
+        [ev.src_lat, ev.src_lon],
+        [ev.dst_lat, ev.dst_lon],
+      ],
+      {
+        color,
+        weight: 1,
+        opacity: 0.7,
+      }
+    );
+
+    let targetLayer = layerIncoming;
+    if (ev.type === "outgoing") targetLayer = layerOutgoing;
+    if (ev.type === "blocked") targetLayer = layerBlocked;
+
+    srcCircle.addTo(targetLayer);
+    dstCircle.addTo(targetLayer);
+    line.addTo(targetLayer);
+
+    setTimeout(() => {
+      targetLayer.removeLayer(srcCircle);
+      targetLayer.removeLayer(dstCircle);
+      targetLayer.removeLayer(line);
+    }, 60000);
+  }
+
+  async function loadRecent() {
+    try {
+      const res = await fetch(EVENTS_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      data.forEach(addEventToMap);
+    } catch (e) {
+      console.error("Error loading recent events:", e);
+    }
+  }
+
+  async function loadFirewallBlocked() {
+    try {
+      const res = await fetch(FIREWALL_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      data.forEach(addEventToMap);
+    } catch (e) {
+      console.error("Error loading firewall events:", e);
+    }
+  }
+
+  function connectWS() {
+    let ws;
+    try {
+      ws = new WebSocket(WS_ENDPOINT);
+    } catch (e) {
+      console.error("WS connect error:", e);
+      return;
+    }
+
+    ws.onopen = () => {
+      document.getElementById("status-text").textContent = "Live (WebSocket)";
+      document.getElementById("status-dot").style.background = "#22c55e";
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const ev = JSON.parse(event.data);
+        addEventToMap(ev);
+      } catch (e) {
+        console.error("WS parse error:", e);
+      }
+    };
+
+    ws.onclose = () => {
+      document.getElementById("status-text").textContent = "Reconnecting…";
+      document.getElementById("status-dot").style.background = "#eab308";
+      setTimeout(connectWS, 2000);
+    };
+
+    ws.onerror = (err) => {
+      console.error("WS error:", err);
+      ws.close();
+    };
+  }
+
+  loadRecent();
+  loadFirewallBlocked();
+  connectWS();
+</script>
+
+</body>
+</html>

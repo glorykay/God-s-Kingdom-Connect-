@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NOXVAULT • CyberSecurity Console</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-main:#050816;
+  --bg-panel:#020617;
+  --bg-panel-soft:#020617;
+  --border:#111827;
+  --text-main:#e5e7eb;
+  --text-soft:#9ca3af;
+  --accent:#38bdf8;
+  --accent-soft:#0ea5e9;
+  --danger:#f97316;
+  --shadow:0 18px 45px rgba(15,23,42,0.75);
+}
+body.light{
+  --bg-main:#f3f4f6;
+  --bg-panel:#ffffff;
+  --bg-panel-soft:#f9fafb;
+  --border:#e5e7eb;
+  --text-main:#111827;
+  --text-soft:#6b7280;
+  --accent:#2563eb;
+  --accent-soft:#1d4ed8;
+  --danger:#ea580c;
+  --shadow:0 14px 35px rgba(15,23,42,0.18);
+}
+body{
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  background:var(--bg-main);
+  color:var(--text-main);
+  min-height:100vh;
+  display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:230px;
+  background:linear-gradient(180deg,#020617,#020617 40%,#020617);
+  border-right:1px solid var(--border);
+  padding:18px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:22px;
+}
+.sidebar-logo{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.logo-mark{
+  width:26px;
+  height:26px;
+  border-radius:8px;
+  background:radial-gradient(circle at 20% 20%,#38bdf8,#0f172a);
+  box-shadow:0 0 18px rgba(56,189,248,0.7);
+}
+.logo-text-main{
+  font-size:17px;
+  font-weight:700;
+  letter-spacing:0.06em;
+}
+.logo-text-sub{
+  font-size:11px;
+  color:var(--text-soft);
+}
+.nav-section-title{
+  font-size:11px;
+  text-transform:uppercase;
+  color:var(--text-soft);
+  margin-bottom:6px;
+}
+.nav-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.nav-item{
+  font-size:13px;
+  padding:6px 10px;
+  border-radius:999px;
+  cursor:pointer;
+  color:var(--text-soft);
+  display:flex;
+  align-items:center;
+  gap:6px;
+  transition:background .18s,border-color .18s,color .18s,transform .12s;
+}
+.nav-item:hover{
+  background:rgba(148,163,184,0.08);
+  transform:translateX(1px);
+}
+.nav-item.active{
+  background:rgba(56,189,248,0.12);
+  border:1px solid var(--accent);
+  color:var(--accent-soft);
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:18px 22px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+.header-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+.header-title{
+  font-size:20px;
+  font-weight:700;
+}
+.header-sub{
+  font-size:12px;
+  color:var(--text-soft);
+}
+.header-right{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:11px;
+  color:var(--text-soft);
+}
+
+/* THEME TOGGLE */
+.theme-toggle{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+  font-size:11px;
+}
+.toggle-track{
+  width:34px;
+  height:18px;
+  border-radius:999px;
+  background:#020617;
+  border:1px solid var(--border);
+  position:relative;
+  transition:background .18s,border-color .18s;
+}
+body.light .toggle-track{
+  background:#e5e7eb;
+}
+.toggle-thumb{
+  width:14px;
+  height:14px;
+  border-radius:999px;
+  background:var(--accent);
+  position:absolute;
+  top:1px;
+  left:1px;
+  transition:left .18s,background .18s,box-shadow .18s;
+  box-shadow:0 0 8px rgba(56,189,248,0.7);
+}
+body.light .toggle-thumb{
+  left:17px;
+}
+
+/* GRID */
+.grid-2{
+  display:grid;
+  grid-template-columns:2fr 2fr;
+  gap:16px;
+}
+.grid-3{
+  display:grid;
+  grid-template-columns:2.2fr 2fr 1.2fr;
+  gap:16px;
+  margin-top:16px;
+}
+
+/* PANELS */
+.panel{
+  background:var(--bg-panel);
+  border-radius:12px;
+  border:1px solid var(--border);
+  padding:12px 14px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+}
+.panel-title{
+  font-size:12px;
+  color:var(--text-soft);
+  margin-bottom:4px;
+}
+.panel-sub{
+  font-size:11px;
+  color:var(--text-soft);
+  margin-bottom:4px;
+}
+.panel::before{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  border:1px solid rgba(56,189,248,0.0);
+  pointer-events:none;
+  transition:border-color .25s, box-shadow .25s;
+}
+.panel:hover::before{
+  border-color:rgba(56,189,248,0.6);
+  box-shadow:0 0 18px rgba(56,189,248,0.35);
+}
+
+/* SMALL TEXT */
+.small{
+  font-size:11px;
+  color:var(--text-soft);
+  margin-top:4px;
+}
+
+/* HARDWARE LIST */
+.hardware-list{
+  list-style:none;
+  font-size:12px;
+  margin-top:6px;
+}
+.hardware-list li{
+  display:flex;
+  justify-content:space-between;
+  padding:5px 0;
+  border-bottom:1px solid var(--border);
+}
+.hardware-name{
+  color:var(--text-main);
+}
+.hardware-meta{
+  color:var(--text-soft);
+  font-size:11px;
+}
+
+/* UNMANAGED CARD */
+.unmanaged-card{
+  background:linear-gradient(135deg,rgba(248,113,113,0.08),rgba(248,113,113,0.02));
+  border-radius:12px;
+  border:1px solid var(--danger);
+  padding:12px 14px;
+  color:var(--danger);
+  font-size:12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  height:100%;
+  box-shadow:0 0 18px rgba(248,113,113,0.25);
+}
+.unmanaged-title{
+  font-weight:600;
+}
+.unmanaged-value{
+  font-size:22px;
+  font-weight:700;
+  margin-top:4px;
+}
+.unmanaged-desc{
+  font-size:11px;
+  color:#fed7aa;
+  margin-top:4px;
+}
+
+/* LEGEND */
+.legend{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:6px;
+}
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font-size:11px;
+  color:var(--text-soft);
+}
+.legend-color{
+  width:10px;
+  height:10px;
+  border-radius:2px;
+}
+
+/* DASHBOARD VIEWS */
+.dashboard-view{
+  opacity:0;
+  transform:translateY(6px);
+  transition:opacity .22s ease-out, transform .22s ease-out;
+  display:none;
+}
+.dashboard-view.active-view{
+  opacity:1;
+  transform:translateY(0);
+  display:block;
+}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11px;
+}
+th,td{
+  padding:6px 8px;
+  border-bottom:1px solid var(--border);
+}
+th{
+  text-align:left;
+  color:var(--text-soft);
+}
+
+/* ALERT BAR */
+#alert-bar{
+  border-color:#ef4444;
+  color:#fecaca;
+  background:rgba(127,29,29,0.35);
+  display:none;
+}
+
+/* RESPONSIVE */
+@media(max-width:1100px){
+  body{flex-direction:column}
+  .sidebar{width:100%;flex-direction:row;align-items:center;justify-content:space-between}
+  .main{padding:14px 14px}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark"></div>
+    <div>
+      <div class="logo-text-main">NOXVAULT</div>
+      <div class="logo-text-sub">Cyber Defense Console</div>
+    </div>
+  </div>
+  <div>
+    <div class="nav-section-title">Dashboards</div>
+    <ul class="nav-list">
+      <li class="nav-item active" data-dashboard="asset"><span class="icon">🖥️</span><span>Asset Inventory</span></li>
+      <li class="nav-item" data-dashboard="threat"><span class="icon">🧠</span><span>Threat Intelligence</span></li>
+      <li class="nav-item" data-dashboard="vuln"><span class="icon">🛡️</span><span>Vulnerability Management</span></li>
+      <li class="nav-item" data-dashboard="firewall"><span class="icon">🌐</span><span>Firewall Analytics</span></li>
+      <li class="nav-item" data-dashboard="health"><span class="icon">📊</span><span>System Health</span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="main">
+  <div class="header-top">
+    <div>
+      <div class="header-title">NOXVAULT CyberSecurity Console</div>
+      <div class="header-sub">Live multi-dashboard SOC view</div>
+    </div>
+    <div class="header-right">
+      <div>Last updated: <span id="last-updated">–</span></div>
+      <div class="theme-toggle" id="theme-toggle">
+        <span>Dark</span>
+        <div class="toggle-track"><div class="toggle-thumb"></div></div>
+        <span>Light</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="alert-bar" class="panel">
+    <strong>Critical Threats Detected:</strong>
+    <span id="alert-text"></span>
+  </div>
+
+  <!-- ASSET INVENTORY -->
+  <div class="dashboard-view active-view" data-dashboard="asset">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Operating System Distribution</div>
+        <div class="panel-sub">Total assets: <span id="os-total">0</span></div>
+        <canvas id="osChart"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Geolocation Distribution</div>
+        <div class="panel-sub">Total assets: <span id="geo-total">0</span></div>
+        <canvas id="geoChart"></canvas>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-title">Top Endpoint Hardware</div>
+        <ul class="hardware-list" id="hardware-list"></ul>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Endpoint Assignment</div>
+        <canvas id="endpointChart"></canvas>
+        <div class="legend" id="endpoint-legend"></div>
+      </div>
+      <div class="unmanaged-card">
+        <div>
+          <div class="unmanaged-title">Unmanaged Assets</div>
+          <div class="unmanaged-value" id="unmanaged-count">0</div>
+          <div class="unmanaged-desc">Devices discovered but not onboarded into NOXVAULT.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">Asset Categories (from OS distribution)</div>
+      <div class="category-strip" id="category-strip"></div>
+    </div>
+  </div>
+
+  <!-- THREAT INTELLIGENCE -->
+  <div class="dashboard-view" data-dashboard="threat">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Latest Threat Events</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Source</th>
+              <th>Severity</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody id="threat-table-body"></tbody>
+        </table>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Threat Severity Summary</div>
+        <div class="small" id="badge-critical">Critical: 0</div>
+        <div class="small" id="badge-high">High: 0</div>
+        <div class="small" id="badge-medium">Medium: 0</div>
+        <div class="small" id="badge-low">Low: 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VULNERABILITY MANAGEMENT -->
+  <div class="dashboard-view" data-dashboard="vuln">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Vulnerability Severity Distribution</div>
+        <canvas id="vulnChart"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Vulnerability Trend (Last 7 Days)</div>
+        <canvas id="vulnTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIREWALL ANALYTICS -->
+  <div class="dashboard-view" data-dashboard="firewall">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-title">Firewall Traffic Overview</div>
+        <canvas id="firewallChart"></canvas>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Top Firewall Rules</div>
+        <ul class="hardware-list" id="firewall-rules-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SYSTEM HEALTH -->
+  <div class="dashboard-view" data-dashboard="health">
+    <div class="grid-3">
+      <div class="panel">
+        <div class="panel-title">CPU Utilization</div>
+        <div class="header-title" id="health-cpu">0%</div>
+        <div class="small">Backend CPU utilization</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Memory Utilization</div>
+        <div class="header-title" id="health-mem">0%</div>
+        <div class="small">Backend memory utilization</div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Disk Utilization</div>
+        <div class="header-title" id="health-disk">0%</div>
+        <div class="small">Backend disk utilization</div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-title">Overall System Status</div>
+      <div class="small" id="health-status">Status: Unknown</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const THEME_KEY = "noxvault_theme";
+const DASHBOARD_KEY = "noxvault_active_dashboard";
+
+function applyTheme(theme){
+  if(theme === "light"){ document.body.classList.add("light"); }
+  else{ document.body.classList.remove("light"); }
+}
+applyTheme(localStorage.getItem(THEME_KEY) || "dark");
+
+function getCssVar(name){
+  return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+
+/* ROUTER */
+function showDashboard(name){
+  document.querySelectorAll(".dashboard-view").forEach(v=>{
+    const active = v.dataset.dashboard === name;
+    v.style.display = active ? "block" : "none";
+    v.classList.toggle("active-view", active);
+  });
+  document.querySelectorAll(".nav-item").forEach(item=>{
+    item.classList.toggle("active", item.dataset.dashboard === name);
+  });
+  localStorage.setItem(DASHBOARD_KEY, name);
+}
+document.querySelectorAll(".nav-item").forEach(item=>{
+  item.addEventListener("click", ()=> showDashboard(item.dataset.dashboard));
+});
+showDashboard(localStorage.getItem(DASHBOARD_KEY) || "asset");
+
+/* TIMESTAMP */
+document.getElementById("last-updated").textContent = new Date().toLocaleString();
+
+/* CHARTS INIT */
+const osCtx = document.getElementById("osChart");
+const geoCtx = document.getElementById("geoChart");
+const endpointCtx = document.getElementById("endpointChart");
+const vulnCtx = document.getElementById("vulnChart");
+const vulnTrendCtx = document.getElementById("vulnTrendChart");
+const firewallCtx = document.getElementById("firewallChart");
+
+let osChart = new Chart(osCtx,{
+  type:"doughnut",
+  data:{labels:[],datasets:[{data:[],backgroundColor:[
+    getCssVar("--accent"),"#22c55e","#a855f7","#f97316","#facc15"
+  ],borderWidth:0}]},
+  options:{plugins:{legend:{position:"right",labels:{color:getCssVar("--text-main")}}},cutout:"60%"}
+});
+
+let geoChart = new Chart(geoCtx,{
+  type:"bar",
+  data:{labels:[],datasets:[{data:[],backgroundColor:getCssVar("--accent")}]},
+  options:{plugins:{legend:{display:false}},scales:{
+    x:{ticks:{color:getCssVar("--text-soft")},grid:{color:getCssVar("--border")}},
+    y:{ticks:{color:getCssVar("--text-soft")},grid:{color:getCssVar("--border")}}
+  }}
+});
+
+const endpointColors=[getCssVar("--accent"),"#a855f7","#22c55e"];
+let endpointChart = new Chart(endpointCtx,{
+  type:"bar",
+  data:{labels:[],datasets:[{data:[],backgroundColor:endpointColors}]},
+  options:{plugins:{legend:{display:false}},scales:{
+    x:{ticks:{color:getCssVar("--text-soft")},grid:{color:getCssVar("--border")}},
+    y:{ticks:{color:getCssVar("--text-soft")},grid:{color:getCssVar("--border")}}
+  }}
+});
+
+let vulnChart = new Chart(vulnCtx,{
+  type:"bar",
+  data:{labels:["Critical","High","Medium","Low"],datasets:[{data:[0,0,0,0],backgroundColor:["#ef4444","#f97316","#eab308","#22c55e"]}]},
+  options:{plugins:{legend:{display:false}}}
+});
+
+let vulnTrendChart = new Chart(vulnTrendCtx,{
+  type:"line",
+  data:{labels:["D-6","D-5","D-4","D-3","D-2","D-1","Today"],datasets:[{
+    data:[0,0,0,0,0,0,0],
+    borderColor:getCssVar("--accent"),
+    backgroundColor:"rgba(56,189,248,0.25)",
+    tension:0.3,
+    fill:true
+  }]},
+  options:{plugins:{legend:{display:false}}}
+});
+
+let firewallChart = new Chart(firewallCtx,{
+  type:"doughnut",
+  data:{labels:["Blocked","Allowed","Suspicious"],datasets:[{data:[0,0,0],backgroundColor:["#ef4444",getCssVar("--accent"),"#eab308"],borderWidth:0}]},
+  options:{plugins:{legend:{position:"right"}},cutout:"60%"}
+});
+
+/* DOM REFS */
+const categoryStrip=document.getElementById("category-strip");
+const hwList=document.getElementById("hardware-list");
+const endpointLegend=document.getElementById("endpoint-legend");
+const alertBar=document.getElementById("alert-bar");
+const alertText=document.getElementById("alert-text");
+
+/* WS */
+let ws;
+function connectWS(){
+  ws=new WebSocket("ws://127.0.0.1:8000/ws/noxvault-console");
+  ws.onopen=()=>console.log("WS connected");
+  ws.onmessage=e=>{
+    const data=JSON.parse(e.data);
+    updateDashboard(data);
+  };
+  ws.onclose=()=>setTimeout(connectWS,2000);
+  ws.onerror=err=>{console.error("WS error",err);ws.close();}
+}
+connectWS();
+
+/* UPDATE FUNCTIONS */
+function updateAssets(data){
+  document.getElementById("last-updated").textContent=new Date().toLocaleString();
+
+  const osDist=data.asset_os_distribution||{};
+  categoryStrip.innerHTML="";
+  Object.entries(osDist).forEach(([label,value],idx)=>{
+    const div=document.createElement("div");
+    div.className="category-card"+(idx===0?" active":"");
+    div.innerHTML=`
+      <span class="category-card-label">${label}</span>
+      <span class="category-card-value">${value.toLocaleString()}</span>
+    `;
+    div.addEventListener("click",()=>{
+      document.querySelectorAll(".category-card").forEach(c=>c.classList.remove("active"));
+      div.classList.add("active");
+    });
+    categoryStrip.appendChild(div);
+  });
+
+  const osLabels=Object.keys(osDist);
+  const osValues=Object.values(osDist);
+  osChart.data.labels=osLabels;
+  osChart.data.datasets[0].data=osValues;
+  osChart.update();
+  document.getElementById("os-total").textContent=osValues.reduce((a,b)=>a+b,0).toLocaleString();
+
+  const geoDist=data.asset_geo_distribution||{};
+  const geoLabels=Object.keys(geoDist);
+  const geoValues=Object.values(geoDist);
+  geoChart.data.labels=geoLabels;
+  geoChart.data.datasets[0].data=geoValues;
+  geoChart.update();
+  document.getElementById("geo-total").textContent=geoValues.reduce((a,b)=>a+b,0).toLocaleString();
+
+  hwList.innerHTML="";
+  (data.asset_hardware||[]).forEach(h=>{
+    const li=document.createElement("li");
+    li.innerHTML=`
+      <div>
+        <div class="hardware-name">${h.name}</div>
+        <div class="hardware-meta">${h.models} models</div>
+      </div>
+      <div class="hardware-meta">${h.assets.toLocaleString()} assets</div>
+    `;
+    hwList.appendChild(li);
+  });
+
+  const epDist=data.asset_endpoint_assignment||{};
+  const epLabels=Object.keys(epDist);
+  const epValues=Object.values(epDist);
+  endpointChart.data.labels=epLabels;
+  endpointChart.data.datasets[0].data=epValues;
+  endpointChart.update();
+
+  endpointLegend.innerHTML="";
+  epLabels.forEach((label,idx)=>{
+    const item=document.createElement("div");
+    item.className="legend-item";
+    item.innerHTML=`
+      <span class="legend-color" style="background:${endpointColors[idx%endpointColors.length]}"></span>
+      <span>${label} (${epValues[idx].toLocaleString()})</span>
+    `;
+    endpointLegend.appendChild(item);
+  });
+
+  document.getElementById("unmanaged-count").textContent=
+    (data.asset_unmanaged||0).toLocaleString();
+}
+
+function updateThreatIntel(data){
+  const tbody=document.getElementById("threat-table-body");
+  if(tbody){
+    tbody.innerHTML="";
+    (data.threat_events||[]).forEach(ev=>{
+      const tr=document.createElement("tr");
+      tr.innerHTML=`
+        <td>${new Date(ev.ts).toLocaleTimeString()}</td>
+        <td>${ev.source}</td>
+        <td>${ev.severity}</td>
+        <td>${ev.description}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  const s=data.threat_summary||{};
+  const crit=s.critical||0;
+
+  if(alertBar && alertText){
+    if(crit>0){
+      alertBar.style.display="block";
+      alertText.textContent=` ${crit} critical events in latest feed. Investigate immediately.`;
+    }else{
+      alertBar.style.display="none";
+    }
+  }
+
+  const setText=(id,label,val)=>{
+    const el=document.getElementById(id);
+    if(el) el.textContent=`${label}: ${val||0}`;
+  };
+  setText("badge-critical","Critical",s.critical);
+  setText("badge-high","High",s.high);
+  setText("badge-medium","Medium",s.medium);
+  setText("badge-low","Low",s.low);
+}
+
+function updateVulnerabilities(data){
+  const v=data.vuln_counts||{};
+  vulnChart.data.datasets[0].data=[
+    v.critical||0,
+    v.high||0,
+    v.medium||0,
+    v.low||0
+  ];
+  vulnChart.update();
+
+  const trend=(data.vuln_trend && data.vuln_trend.last_7_days)||[0,0,0,0,0,0,0];
+  vulnTrendChart.data.datasets[0].data=trend;
+  vulnTrendChart.update();
+}
+
+function updateFirewall(data){
+  const f=data.firewall_stats||{};
+  firewallChart.data.datasets[0].data=[
+    f.blocked||0,
+    f.allowed||0,
+    f.suspicious||0
+  ];
+  firewallChart.update();
+
+  const list=document.getElementById("firewall-rules-list");
+  if(list){
+    list.innerHTML="";
+    (data.firewall_top_rules||[]).forEach(r=>{
+      const li=document.createElement("li");
+      li.innerHTML=`
+        <div class="hardware-name">${r.rule}</div>
+        <div class="hardware-meta">${r.hits.toLocaleString()} hits</div>
+      `;
+      list.appendChild(li);
+    });
+  }
+}
+
+function updateSystemHealth(data){
+  const h=data.system_health||{};
+  const cpu=document.getElementById("health-cpu");
+  const mem=document.getElementById("health-mem");
+  const disk=document.getElementById("health-disk");
+  const status=document.getElementById("health-status");
+  if(cpu) cpu.textContent=(h.cpu||0)+"%";
+  if(mem) mem.textContent=(h.memory||0)+"%";
+  if(disk) disk.textContent=(h.disk||0)+"%";
+  if(status) status.textContent="Status: "+(h.status||"Unknown");
+}
+
+function updateDashboard(data){
+  updateAssets(data);
+  updateThreatIntel(data);
+  updateVulnerabilities(data);
+  updateFirewall(data);
+  updateSystemHealth(data);
+}
+
+/* THEME TOGGLE */
+document.getElementById("theme-toggle").addEventListener("click",()=>{
+  const isLight=document.body.classList.contains("light");
+  const newTheme=isLight?"dark":"light";
+  applyTheme(newTheme);
+  localStorage.setItem(THEME_KEY,newTheme);
+});
+</script>
+</body>
+</html>
+
+

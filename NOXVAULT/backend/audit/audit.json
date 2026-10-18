@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-09-21T19:32:10.123Z",
+  "os": {
+    "system": "Darwin",
+    "release": "23.5.0",
+    "version": "MacOS 14.5",
+    "machine": "arm64",
+    "processor": "Apple M1",
+    "architecture": "64bit"
+  },
+  "cpu": {
+    "cores_physical": 4,
+    "cores_logical": 8,
+    "usage_percent": 12.5
+  },
+  "memory": {
+    "total_gb": 16.0,
+    "used_gb": 8.3,
+    "free_gb": 7.7,
+    "percent_used": 52
+  },
+  "disk": {
+    "/dev/disk3s1": {
+      "mount": "/",
+      "total_gb": 494.38,
+      "used_gb": 210.12,
+      "free_gb": 284.26,
+      "percent_used": 42
+    }
+  },
+  "network": {
+    "hostname": "MacBook-Pro",
+    "primary_ip": "192.168.1.10",
+    "interfaces": ["en0", "lo0", "bridge0"]
+  },
+  "uptime": {
+    "uptime_hours": 10.88
+  },
+  "system_health_score": 78
+}

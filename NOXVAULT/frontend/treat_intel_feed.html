@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NOXVAULT • SOC Threat Intelligence Console</title>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #020617;
+  color: #e5e7eb;
+  min-height: 100vh;
+  padding: 24px;
+}
+h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 18px;
+}
+.sidebar {
+  background: #020617;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  padding: 16px;
+}
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.nav-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #6b7280;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+.nav-item {
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #e5e7eb;
+}
+.nav-item.active {
+  background: #111827;
+}
+.nav-item:hover {
+  background: #111827;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.title {
+  font-size: 22px;
+  font-weight: 700;
+}
+.subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.subtitle span {
+  color: #e5e7eb;
+}
+.status-pill {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #374151;
+  background: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #f97316;
+}
+.status-pill.ok .status-dot {
+  background: #22c55e;
+}
+.status-pill.ok {
+  border-color: #16a34a;
+}
+.grid-kpi {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.card {
+  background: #020617;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  padding: 14px;
+}
+.card-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.card-value {
+  margin-top: 6px;
+  font-size: 24px;
+  font-weight: 700;
+}
+.card-tag {
+  margin-top: 4px;
+  font-size: 11px;
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #111827;
+  color: #9ca3af;
+}
+.grid-main {
+  display: grid;
+  grid-template-columns: 2fr 1.4fr;
+  gap: 12px;
+}
+.section {
+  background: #020617;
+  border-radius: 14px;
+  border: 1px solid #1f2937;
+  padding: 14px;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.section-sub {
+  font-size: 11px;
+  color: #6b7280;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+}
+.table th,
+.table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid #111827;
+}
+.table th {
+  text-align: left;
+  color: #9ca3af;
+  font-weight: 500;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+.badge.high { background: rgba(239,68,68,0.15); color: #fca5a5; }
+.badge.medium { background: rgba(234,179,8,0.15); color: #fde68a; }
+.badge.low { background: rgba(34,197,94,0.15); color: #bbf7d0; }
+.badge.critical { background: rgba(220,38,38,0.25); color: #fecaca; }
+.small {
+  font-size: 11px;
+  color: #6b7280;
+}
+.section-block {
+  display: none;
+}
+.section-block.active {
+  display: block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-title">NOXVAULT SOC</div>
+
+    <div class="nav-section-label">Main</div>
+    <div class="nav-item active">Executive Overview</div>
+    <div class="nav-item">Threat Intelligence</div>
+    <div class="nav-item">Incidents</div>
+
+    <div class="nav-section-label">Threat Surfaces</div>
+    <div class="nav-item">Network & Perimeter</div>
+    <div class="nav-item">Endpoints & Malware</div>
+    <div class="nav-item">Dark‑Web & Leaks</div>
+
+    <div class="nav-section-label">Analytics</div>
+    <div class="nav-item">Attack Map</div>
+    <div class="nav-item">Vulnerabilities</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- GLOBAL HEADER -->
+    <div class="header">
+      <div class="title-block">
+        <div class="title">NOXVAULT SOC Console</div>
+        <div class="subtitle">
+          Live feed from NOXVAULT TI Core • Last WebSocket update:
+          <span id="last-update">–</span>
+        </div>
+        <div class="subtitle">
+          CISA KEV last refresh:
+          <span id="kev-last-refresh">–</span>
+        </div>
+      </div>
+      <div class="status-pill" id="ws-status-pill">
+        <span class="status-dot"></span>
+        <span id="ws-status-text">Connecting…</span>
+      </div>
+    </div>
+
+    <!-- EXECUTIVE OVERVIEW -->
+    <section id="section-overview" class="section-block active">
+      <section class="grid-kpi">
+        <div class="card">
+          <div class="card-label">Exploits in the wild (CISA KEV)</div>
+          <div class="card-value" id="kpi_exploits">0</div>
+          <div class="card-tag">Known exploited vulnerabilities</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Critical KEV entries</div>
+          <div class="card-value" id="kpi_critical">0</div>
+          <div class="card-tag">Ransomware‑linked</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Dark‑web indicators</div>
+          <div class="card-value" id="kpi_darkweb">0</div>
+          <div class="card-tag">Credentials / leaks</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Active malware campaigns</div>
+          <div class="card-value" id="kpi_malware">0</div>
+          <div class="card-tag">Campaign activity</div>
+        </div>
+      </section>
+
+      <section class="grid-main" style="margin-top:12px;">
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2>Threat Trends</h2>
+              <div class="section-sub">Exploits, dark‑web, and malware activity (synthetic view)</div>
+            </div>
+          </div>
+          <canvas id="trendChart" height="140"></canvas>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2>Global Threat Map</h2>
+              <div class="section-sub">Synthetic geo distribution of activity</div>
+            </div>
+          </div>
+          <canvas id="mapChart" height="140"></canvas>
+          <div class="small" style="margin-top:8px;">
+            * Simulated geo heat view driven by your live KEV counts.
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-main" style="margin-top:12px;">
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2>Dark‑Web Leak Monitor</h2>
+              <div class="section-sub">Synthetic leaks table (wire real feeds later)</div>
+            </div>
+          </div>
+          <table class="table" id="darkweb-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>First Seen</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="section">
+          <div class="section-header">
+            <div>
+              <h2>Malware Campaign Tracker</h2>
+              <div class="section-sub">Synthetic campaigns tied to KEV volume</div>
+            </div>
+          </div>
+          <table class="table" id="malware-table">
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Family</th>
+                <th>Target</th>
+                <th>Risk</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+
+    <!-- THREAT INTELLIGENCE -->
+    <section id="section-threatintel" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Threat Intelligence Feed</h2>
+            <div class="section-sub">Raw indicators from NOXVAULT TI Core</div>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="ti-table-body">
+            <tr><td>malicious_ips</td><td id="ti-malicious_ips">0</td></tr>
+            <tr><td>malicious_domains</td><td id="ti-malicious_domains">0</td></tr>
+            <tr><td>malware_campaigns</td><td id="ti-malware_campaigns">0</td></tr>
+            <tr><td>botnet_c2</td><td id="ti-botnet_c2">0</td></tr>
+            <tr><td>darkweb_indicators</td><td id="ti-darkweb_indicators">0</td></tr>
+            <tr><td>exploits_in_the_wild</td><td id="ti-exploits_in_the_wild">0</td></tr>
+            <tr><td>kev_critical</td><td id="ti-kev_critical">0</td></tr>
+            <tr><td>kev_last_refresh</td><td id="ti-kev_last_refresh">–</td></tr>
+            <tr><td>timestamp</td><td id="ti-timestamp">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- INCIDENTS -->
+    <section id="section-incidents" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Incidents</h2>
+            <div class="section-sub">Placeholder incident queue (wire to backend later)</div>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>INC‑001</td>
+              <td>Ransomware</td>
+              <td><span class="badge critical">Critical</span></td>
+              <td>Investigating</td>
+            </tr>
+            <tr>
+              <td>INC‑002</td>
+              <td>Phishing</td>
+              <td><span class="badge high">High</span></td>
+              <td>Queued</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- NETWORK & PERIMETER -->
+    <section id="section-network" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Network & Perimeter</h2>
+            <div class="section-sub">Firewall / IDS / perimeter telemetry (placeholder)</div>
+          </div>
+        </div>
+        <p class="small">
+          This panel can later show firewall events, IDS alerts, and perimeter anomalies from NOXVAULT sensors.
+        </p>
+      </div>
+    </section>
+
+    <!-- ENDPOINTS & MALWARE -->
+    <section id="section-endpoints" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Endpoints & Malware</h2>
+            <div class="section-sub">Endpoint detections and malware families (placeholder)</div>
+          </div>
+        </div>
+        <p class="small">
+          Wire this to your EDR / endpoint telemetry to show active infections, quarantines, and malware families.
+        </p>
+      </div>
+    </section>
+
+    <!-- DARK‑WEB & LEAKS -->
+    <section id="section-darkweb" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Dark‑Web & Leaks</h2>
+            <div class="section-sub">Same leak monitor as overview, focused view</div>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Source</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>First Seen</th>
+            </tr>
+          </thead>
+          <tbody id="darkweb-table-secondary"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ATTACK MAP -->
+    <section id="section-attackmap" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Attack Map</h2>
+            <div class="section-sub">Global threat intensity radar</div>
+          </div>
+        </div>
+        <canvas id="mapChartSecondary" height="140"></canvas>
+        <div class="small" style="margin-top:8px;">
+          Same synthetic geo distribution, focused view for analysts.
+        </div>
+      </div>
+    </section>
+
+    <!-- VULNERABILITIES -->
+    <section id="section-vulns" class="section-block">
+      <div class="section">
+        <div class="section-header">
+          <div>
+            <h2>Vulnerabilities</h2>
+            <div class="section-sub">CISA KEV‑driven vulnerability overview</div>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Metric</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Total KEV entries</td><td id="vuln-total">0</td></tr>
+            <tr><td>Critical KEV entries</td><td id="vuln-critical">0</td></tr>
+            <tr><td>Last KEV refresh</td><td id="vuln-last-refresh">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+// =========================
+// WebSocket + Live Binding
+// =========================
+const WS_URL = "ws://127.0.0.1:8000/ws/threat-intel";
+let ws = null;
+
+// Chart instances
+let trendChart = null;
+let mapChart = null;
+let mapChartSecondary = null;
+
+// Synthetic state for charts
+let historyLabels = [];
+let historyExploits = [];
+let historyDarkweb = [];
+let historyMalware = [];
+
+const el = (id) => document.getElementById(id);
+
+function setWSStatus(connected) {
+  const pill = el("ws-status-pill");
+  const text = el("ws-status-text");
+  if (connected) {
+    pill.classList.add("ok");
+    text.textContent = "Connected";
+  } else {
+    pill.classList.remove("ok");
+    text.textContent = "Disconnected";
+  }
+}
+
+function updateFromPayload(data) {
+  const exploits = data.exploits_in_the_wild || 0;
+  const critical = data.kev_critical || 0;
+
+  const darkweb = Math.floor(exploits * 0.03) + Math.floor(Math.random() * 20);
+  const malware = Math.floor(exploits * 0.02) + Math.floor(Math.random() * 10);
+
+  el("kpi_exploits").textContent = exploits;
+  el("kpi_critical").textContent = critical;
+  el("kpi_darkweb").textContent = darkweb;
+  el("kpi_malware").textContent = malware;
+
+  el("last-update").textContent = new Date().toLocaleString();
+  el("kev-last-refresh").textContent = data.kev_last_refresh || "–";
+
+  // Threat Intelligence raw table
+  el("ti-malicious_ips").textContent = data.malicious_ips ?? 0;
+  el("ti-malicious_domains").textContent = data.malicious_domains ?? 0;
+  el("ti-malware_campaigns").textContent = data.malware_campaigns ?? 0;
+  el("ti-botnet_c2").textContent = data.botnet_c2 ?? 0;
+  el("ti-darkweb_indicators").textContent = data.darkweb_indicators ?? 0;
+  el("ti-exploits_in_the_wild").textContent = exploits;
+  el("ti-kev_critical").textContent = critical;
+  el("ti-kev_last_refresh").textContent = data.kev_last_refresh || "–";
+  el("ti-timestamp").textContent = data.timestamp || "–";
+
+  // Vulnerabilities panel
+  el("vuln-total").textContent = exploits;
+  el("vuln-critical").textContent = critical;
+  el("vuln-last-refresh").textContent = data.kev_last_refresh || "–";
+
+  const label = new Date().toLocaleTimeString();
+  historyLabels.push(label);
+  historyExploits.push(exploits);
+  historyDarkweb.push(darkweb);
+  historyMalware.push(malware);
+
+  if (historyLabels.length > 12) {
+    historyLabels.shift();
+    historyExploits.shift();
+    historyDarkweb.shift();
+    historyMalware.shift();
+  }
+
+  updateTrendChart();
+  updateMapChart(exploits, darkweb, malware);
+  updateDarkwebTable(darkweb, "#darkweb-table tbody");
+  updateDarkwebTable(darkweb, "#darkweb-table-secondary");
+  updateMalwareTable(malware, critical);
+}
+
+// =========================
+// Charts
+// =========================
+function initTrendChart() {
+  const ctx = document.getElementById("trendChart").getContext("2d");
+  trendChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: historyLabels,
+      datasets: [
+        {
+          label: "Exploits in the wild",
+          data: historyExploits,
+          borderColor: "#f97316",
+          backgroundColor: "rgba(249,115,22,0.15)",
+          tension: 0.3
+        },
+        {
+          label: "Dark‑web indicators",
+          data: historyDarkweb,
+          borderColor: "#22c55e",
+          backgroundColor: "rgba(34,197,94,0.15)",
+          tension: 0.3
+        },
+        {
+          label: "Malware campaigns",
+          data: historyMalware,
+          borderColor: "#3b82f6",
+          backgroundColor: "rgba(59,130,246,0.15)",
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#e5e7eb", font: { size: 11 } }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: "#9ca3af", font: { size: 10 } },
+          grid: { color: "#111827" }
+        },
+        y: {
+          ticks: { color: "#9ca3af", font: { size: 10 } },
+          grid: { color: "#111827" }
+        }
+      }
+    }
+  });
+}
+
+function updateTrendChart() {
+  if (!trendChart) return;
+  trendChart.data.labels = historyLabels;
+  trendChart.data.datasets[0].data = historyExploits;
+  trendChart.data.datasets[1].data = historyDarkweb;
+  trendChart.data.datasets[2].data = historyMalware;
+  trendChart.update();
+}
+
+function initMapChart() {
+  const ctx = document.getElementById("mapChart").getContext("2d");
+  mapChart = new Chart(ctx, {
+    type: "radar",
+    data: {
+      labels: ["North America", "Europe", "Asia", "LATAM", "Africa", "Oceania"],
+      datasets: [
+        {
+          label: "Threat intensity",
+          data: [10, 8, 7, 4, 3, 2],
+          borderColor: "#f97316",
+          backgroundColor: "rgba(249,115,22,0.2)"
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#e5e7eb", font: { size: 11 } }
+        }
+      },
+      scales: {
+        r: {
+          angleLines: { color: "#111827" },
+          grid: { color: "#111827" },
+          pointLabels: { color: "#9ca3af", font: { size: 10 } },
+          ticks: { display: false }
+        }
+      }
+    }
+  });
+
+  const ctx2 = document.getElementById("mapChartSecondary").getContext("2d");
+  mapChartSecondary = new Chart(ctx2, {
+    type: "radar",
+    data: {
+      labels: ["North America", "Europe", "Asia", "LATAM", "Africa", "Oceania"],
+      datasets: [
+        {
+          label: "Threat intensity",
+          data: [10, 8, 7, 4, 3, 2],
+          borderColor: "#3b82f6",
+          backgroundColor: "rgba(59,130,246,0.2)"
+        }
+      ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          labels: { color: "#e5e7eb", font: { size: 11 } }
+        }
+      },
+      scales: {
+        r: {
+          angleLines: { color: "#111827" },
+          grid: { color: "#111827" },
+          pointLabels: { color: "#9ca3af", font: { size: 10 } },
+          ticks: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function updateMapChart(exploits, darkweb, malware) {
+  if (!mapChart || !mapChartSecondary) return;
+  const base = Math.max(1, Math.floor(exploits / 100));
+  const values = [
+    base + Math.floor(darkweb / 10),
+    base + Math.floor(malware / 8),
+    base + Math.floor(exploits / 20),
+    base + 2,
+    base + 1,
+    base
+  ];
+  mapChart.data.datasets[0].data = values;
+  mapChartSecondary.data.datasets[0].data = values;
+  mapChart.update();
+  mapChartSecondary.update();
+}
+
+// =========================
+// Tables
+// =========================
+function updateDarkwebTable(darkwebCount, selector) {
+  const tbody = document.querySelector(selector);
+  tbody.innerHTML = "";
+  const samples = Math.min(5, Math.max(1, Math.floor(darkwebCount / 10) || 1));
+  const sources = ["RaidForums", "BreachForums", "Exploit.in", "Genesis", "DarkMarket"];
+  const types = ["Credentials dump", "Database leak", "Access sale", "PII bundle"];
+
+  for (let i = 0; i < samples; i++) {
+    const tr = document.createElement("tr");
+    const src = sources[i % sources.length];
+    const type = types[i % types.length];
+    const sevClass = i === 0 ? "high" : i === 1 ? "medium" : "low";
+    const sevLabel = i === 0 ? "High" : i === 1 ? "Medium" : "Low";
+    const date = new Date(Date.now() - i * 3600 * 1000).toLocaleString();
+
+    tr.innerHTML = `
+      <td>${src}</td>
+      <td>${type}</td>
+      <td><span class="badge ${sevClass}">${sevLabel}</span></td>
+      <td>${date}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function updateMalwareTable(malwareCount, criticalKev) {
+  const tbody = document.querySelector("#malware-table tbody");
+  tbody.innerHTML = "";
+  const samples = Math.min(5, Math.max(1, Math.floor(malwareCount / 5) || 1));
+  const campaigns = ["Operation Ember", "Silent Hydra", "Nightfall", "GhostWire", "Iron Fang"];
+  const families = ["Ransomware", "Loader", "Banker", "Infostealer"];
+  const targets = ["Finance", "Healthcare", "Gov", "Retail", "Manufacturing"];
+
+  for (let i = 0; i < samples; i++) {
+    const tr = document.createElement("tr");
+    const camp = campaigns[i % campaigns.length];
+    const fam = families[i % families.length];
+    const tgt = targets[i % targets.length];
+    const sevClass = i === 0 && criticalKev > 0 ? "critical" : i <= 1 ? "high" : "medium";
+    const sevLabel =
+      sevClass === "critical" ? "Critical" :
+      sevClass === "high" ? "High" : "Medium";
+
+    tr.innerHTML = `
+      <td>${camp}</td>
+      <td>${fam}</td>
+      <td>${tgt}</td>
+      <td><span class="badge ${sevClass}">${sevLabel}</span></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+// =========================
+// WebSocket lifecycle
+// =========================
+function connectWS() {
+  ws = new WebSocket(WS_URL);
+
+  ws.onopen = () => {
+    setWSStatus(true);
+  };
+
+  ws.onclose = () => {
+    setWSStatus(false);
+    setTimeout(connectWS, 3000);
+  };
+
+  ws.onerror = () => {
+    ws.close();
+  };
+
+  ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    updateFromPayload(data);
+  };
+}
+
+// =========================
+// Sidebar Navigation Logic
+// =========================
+const navMap = {
+  "Executive Overview": "section-overview",
+  "Threat Intelligence": "section-threatintel",
+  "Incidents": "section-incidents",
+  "Network & Perimeter": "section-network",
+  "Endpoints & Malware": "section-endpoints",
+  "Dark‑Web & Leaks": "section-darkweb",
+  "Attack Map": "section-attackmap",
+  "Vulnerabilities": "section-vulns"
+};
+
+function showSection(name) {
+  Object.values(navMap).forEach(id => {
+    const sec = document.getElementById(id);
+    sec.classList.remove("active");
+  });
+
+  const targetId = navMap[name];
+  const target = document.getElementById(targetId);
+  if (target) target.classList.add("active");
+
+  document.querySelectorAll(".nav-item").forEach(item => {
+    item.classList.remove("active");
+    if (item.textContent.trim() === name) {
+      item.classList.add("active");
+    }
+  });
+}
+
+document.querySelectorAll(".nav-item").forEach(item => {
+  item.addEventListener("click", () => {
+    const name = item.textContent.trim();
+    showSection(name);
+  });
+});
+
+// Init
+initTrendChart();
+initMapChart();
+connectWS();
+showSection("Executive Overview");
+</script>
+
+</body>
+</html>

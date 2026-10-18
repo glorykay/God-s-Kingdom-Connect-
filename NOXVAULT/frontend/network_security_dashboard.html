@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT – Unified SOC Mega Dashboard</title>
+<style>
+:root {
+    color-scheme: dark;
+    --bg: #020617;
+    --bg-elevated: #020617;
+    --border-subtle: #111827;
+    --border-strong: #1f2937;
+    --text-main: #e5e7eb;
+    --text-muted: #9ca3af;
+    --accent: #22c55e;
+    --accent-soft: #022c22;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    padding: 16px;
+}
+.shell { max-width: 1320px; margin: 0 auto; }
+header {
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+}
+.brand { display:flex;align-items:center;gap:8px; }
+.brand-mark {
+    width:26px;height:26px;border-radius:10px;
+    background:radial-gradient(circle at 30% 0,#22c55e,#16a34a,#0f172a);
+    display:flex;align-items:center;justify-content:center;
+    font-size:14px;font-weight:700;color:#e5e7eb;
+}
+.brand-text { display:flex;flex-direction:column; }
+.brand-title { font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase; }
+.brand-sub { font-size:11px;color:var(--text-muted); }
+.pill {
+    font-size:11px;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--border-strong);background:#020617;color:var(--text-muted);
+    display:flex;align-items:center;gap:6px;
+}
+.pill-dot { width:6px;height:6px;border-radius:999px;background:#22c55e; }
+.top-controls { display:flex;align-items:center;gap:10px; }
+
+.tabs {
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+}
+.tab-btn {
+    font-size:11px;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--border-strong);
+    background:#020617;
+    color:var(--text-muted);
+    cursor:pointer;
+}
+.tab-btn.active {
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    color:#bbf7d0;
+}
+
+main {
+    display:block;
+}
+.view {
+    display:none;
+}
+.view.active {
+    display:grid;
+    grid-template-columns:2.1fr 1.6fr;
+    gap:14px;
+}
+.column { display:flex;flex-direction:column;gap:12px; }
+.section {
+    background:var(--bg-elevated);
+    border-radius:16px;
+    border:1px solid var(--border-subtle);
+    padding:14px 16px;
+    box-shadow:0 0 40px rgba(0,0,0,0.5);
+}
+.section-header {
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;
+}
+.section-header h2 {
+    font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);
+}
+.section-sub { font-size:11px;color:var(--text-muted);margin-top:2px; }
+.btn-pill {
+    font-size:11px;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--border-strong);background:#020617;color:var(--text-main);cursor:pointer;
+}
+.btn-pill.primary { border-color:var(--accent);background:var(--accent-soft);color:#bbf7d0; }
+
+table {
+    width:100%;border-collapse:collapse;font-size:11px;
+}
+th,td {
+    padding:6px 6px;
+    border-bottom:1px solid #020617;
+    text-align:left;
+    white-space:nowrap;
+}
+th {
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--text-muted);
+}
+tr:hover { background:#020617; }
+
+.badge {
+    display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;
+    font-size:10px;border:1px solid transparent;
+}
+.badge.critical { border-color:rgba(248,113,113,0.4);background:rgba(127,29,29,0.6);color:#fecaca; }
+.badge.high { border-color:rgba(251,146,60,0.4);background:rgba(124,45,18,0.6);color:#fed7aa; }
+.badge.medium { border-color:rgba(250,204,21,0.4);background:rgba(113,63,18,0.6);color:#fef9c3; }
+.badge.low { border-color:rgba(52,211,153,0.4);background:rgba(6,78,59,0.6);color:#a7f3d0; }
+
+.metric-row { display:flex;gap:10px;margin-top:4px; }
+.metric-card {
+    flex:1;
+    border-radius:10px;
+    border:1px solid var(--border-strong);
+    padding:8px 10px;
+    background:#020617;
+}
+.metric-label { font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em; }
+.metric-value { font-size:16px;font-weight:600;margin-top:2px; }
+.metric-sub { font-size:10px;color:var(--text-muted);margin-top:2px; }
+
+.bar {
+    height:8px;border-radius:999px;background:#020617;border:1px solid #111827;
+    margin-top:6px;overflow:hidden;
+}
+.bar-fill {
+    height:100%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#a3e635);
+    width:0%;transition:width 0.3s ease;
+}
+
+.sparkline {
+    width:100%;height:40px;border-radius:8px;
+    background:radial-gradient(circle at 0 0,#22c55e22,#020617);
+    border:1px solid #111827;
+    position:relative;
+    overflow:hidden;
+}
+.sparkline-line {
+    position:absolute;left:0;top:0;width:100%;height:100%;
+}
+.tag {
+    display:inline-flex;align-items:center;
+    padding:2px 6px;border-radius:999px;
+    border:1px solid #1f2937;
+    font-size:10px;color:var(--text-muted);
+    margin-right:4px;
+}
+.log-list {
+    font-size:11px;
+    max-height:220px;
+    overflow-y:auto;
+}
+.log-item {
+    padding:4px 0;
+    border-bottom:1px solid #020617;
+}
+.log-time {
+    color:var(--text-muted);
+    margin-right:6px;
+}
+.log-sev-critical { color:#fecaca; }
+.log-sev-high { color:#fed7aa; }
+.log-sev-medium { color:#fef9c3; }
+.log-sev-low { color:#a7f3d0; }
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+    <div class="brand">
+        <div class="brand-mark">N</div>
+        <div class="brand-text">
+            <div class="brand-title">NOXVAULT</div>
+            <div class="brand-sub">Unified SOC Mega Dashboard</div>
+        </div>
+    </div>
+    <div class="top-controls">
+        <div class="pill">
+            <div class="pill-dot"></div>
+            <span>Live Telemetry</span>
+        </div>
+        <div class="pill">
+            <span>Mode:</span><span>Monitoring</span>
+        </div>
+    </div>
+</header>
+
+<div class="tabs">
+    <button class="tab-btn active" data-view="network-view">Network</button>
+    <button class="tab-btn" data-view="system-view">System Health</button>
+    <button class="tab-btn" data-view="threat-view">Cyber Threat</button>
+    <button class="tab-btn" data-view="soc-view">SOC Console</button>
+</div>
+
+<main>
+    <!-- NETWORK VIEW -->
+    <div id="network-view" class="view active">
+        <div class="column">
+            <!-- Firewall -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Firewall Events</h2>
+                        <div class="section-sub">Allowed / blocked traffic from perimeter firewalls</div>
+                    </div>
+                    <button id="fw-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th><th>Action</th><th>Src IP</th><th>Dst IP</th>
+                            <th>Port</th><th>Proto</th><th>Rule</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fw-body"></tbody>
+                </table>
+            </section>
+
+            <!-- IDS -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>IDS / IPS Alerts</h2>
+                        <div class="section-sub">Signatures and anomalies from network sensors</div>
+                    </div>
+                    <button id="ids-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th><th>Severity</th><th>Signature</th>
+                            <th>Src IP</th><th>Dst IP</th><th>Proto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ids-body"></tbody>
+                </table>
+            </section>
+
+            <!-- Network Anomalies -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Network Anomalies</h2>
+                        <div class="section-sub">Behavioral deviations from baseline</div>
+                    </div>
+                </div>
+                <div class="sparkline">
+                    <canvas id="anomaly-canvas" class="sparkline-line"></canvas>
+                </div>
+                <div class="metric-row" style="margin-top:10px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Current Score</div>
+                        <div id="anomaly-score" class="metric-value">0.0</div>
+                        <div class="metric-sub">0 = normal, 1 = highly anomalous</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active Anomalies</div>
+                        <div id="anomaly-count" class="metric-value">0</div>
+                        <div class="metric-sub">Flows exceeding baseline</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="column">
+            <!-- Top Talkers -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Top Talkers</h2>
+                        <div class="section-sub">Hosts generating the most traffic</div>
+                    </div>
+                    <button id="talkers-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP</th><th>Direction</th><th>Throughput</th>
+                            <th>Flows</th><th>Tags</th>
+                        </tr>
+                    </thead>
+                    <tbody id="talkers-body"></tbody>
+                </table>
+            </section>
+
+            <!-- Suspicious Ports -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Suspicious Ports</h2>
+                        <div class="section-sub">Unusual or high-risk ports observed</div>
+                    </div>
+                    <button id="ports-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Port</th><th>Proto</th><th>Hits</th>
+                            <th>Severity</th><th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ports-body"></tbody>
+                </table>
+            </section>
+
+            <!-- Network Health -->
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Network Health</h2>
+                        <div class="section-sub">High-level view of security posture</div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <div class="metric-label">Blocked Connections</div>
+                        <div id="health-blocked" class="metric-value">0</div>
+                        <div class="bar"><div id="health-blocked-bar" class="bar-fill"></div></div>
+                        <div class="metric-sub">Last 5 minutes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Critical Alerts</div>
+                        <div id="health-critical" class="metric-value">0</div>
+                        <div class="bar"><div id="health-critical-bar" class="bar-fill"></div></div>
+                        <div class="metric-sub">Across all sensors</div>
+                    </div>
+                </div>
+                <div class="metric-row" style="margin-top:10px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Overall Status</div>
+                        <div id="health-status" class="metric-value">Normal</div>
+                        <div class="metric-sub" id="health-status-sub">No major anomalies detected.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- SYSTEM HEALTH VIEW -->
+    <div id="system-view" class="view">
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>System Metrics</h2>
+                        <div class="section-sub">CPU, memory, disk, and processes</div>
+                    </div>
+                    <button id="sys-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <div class="metric-label">CPU Usage</div>
+                        <div id="sys-cpu" class="metric-value">0%</div>
+                        <div class="bar"><div id="sys-cpu-bar" class="bar-fill"></div></div>
+                        <div class="metric-sub">Across all cores</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Memory Usage</div>
+                        <div id="sys-mem" class="metric-value">0%</div>
+                        <div class="bar"><div id="sys-mem-bar" class="bar-fill"></div></div>
+                        <div class="metric-sub">Physical RAM</div>
+                    </div>
+                </div>
+                <div class="metric-row" style="margin-top:10px;">
+                    <div class="metric-card">
+                        <div class="metric-label">Disk Usage</div>
+                        <div id="sys-disk" class="metric-value">0%</div>
+                        <div class="bar"><div id="sys-disk-bar" class="bar-fill"></div></div>
+                        <div class="metric-sub">Root filesystem</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Processes</div>
+                        <div id="sys-proc" class="metric-value">0</div>
+                        <div class="metric-sub">Running processes</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>System Health Summary</h2>
+                        <div class="section-sub">Overall host status</div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <div class="metric-label">Status</div>
+                        <div id="sys-status" class="metric-value">Normal</div>
+                        <div class="metric-sub" id="sys-status-sub">No major issues detected.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- CYBER THREAT VIEW -->
+    <div id="threat-view" class="view">
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Threat Intelligence</h2>
+                        <div class="section-sub">Recent threats and indicators</div>
+                    </div>
+                    <button id="threat-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th><th>Type</th><th>Indicator</th><th>Severity</th><th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody id="threat-body"></tbody>
+                </table>
+            </section>
+        </div>
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Vulnerabilities</h2>
+                        <div class="section-sub">Recent CVEs and exposure</div>
+                    </div>
+                    <button id="vuln-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>CVE</th><th>Severity</th><th>Asset</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vuln-body"></tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+
+    <!-- SOC CONSOLE VIEW -->
+    <div id="soc-view" class="view">
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Live Alerts</h2>
+                        <div class="section-sub">SOC alert stream</div>
+                    </div>
+                    <button id="alerts-refresh" class="btn-pill">Refresh</button>
+                </div>
+                <div id="alerts-list" class="log-list"></div>
+            </section>
+        </div>
+        <div class="column">
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Console Status</h2>
+                        <div class="section-sub">Analyst queue and triage</div>
+                    </div>
+                </div>
+                <div class="metric-row">
+                    <div class="metric-card">
+                        <div class="metric-label">Open Incidents</div>
+                        <div id="soc-open" class="metric-value">0</div>
+                        <div class="metric-sub">Awaiting triage</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Active Analysts</div>
+                        <div id="soc-analysts" class="metric-value">0</div>
+                        <div class="metric-sub">Logged in</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+</div>
+
+<script>
+const NET_API = "http://127.0.0.1:8000";      // network_security_backend
+const SYS_API = "http://127.0.0.1:8000";      // system health (adjust if different)
+const THREAT_API = "http://127.0.0.1:8000";   // cyber threat (adjust if different)
+const SOC_API = "http://127.0.0.1:8000";      // soc console (adjust if different)
+
+// ---------- TAB SWITCHING ----------
+document.querySelectorAll(".tab-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        const viewId = btn.dataset.view;
+        document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+        document.getElementById(viewId).classList.add("active");
+    });
+});
+
+// ---------- NETWORK: FIREWALL ----------
+async function loadFirewallEvents() {
+    const tbody = document.getElementById("fw-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${NET_API}/firewall`);
+        const data = await res.json();
+        data.forEach(ev => {
+            const sevClass = ev.action === "BLOCK" ? "critical" : "low";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${ev.time}</td>
+                <td><span class="badge ${sevClass}">${ev.action}</span></td>
+                <td>${ev.src_ip}</td>
+                <td>${ev.dst_ip}</td>
+                <td>${ev.port}</td>
+                <td>${ev.proto}</td>
+                <td>${ev.rule}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Firewall fetch failed:", err);
+    }
+}
+
+// ---------- NETWORK: IDS ----------
+async function loadIDSAlerts() {
+    const tbody = document.getElementById("ids-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${NET_API}/ids`);
+        const data = await res.json();
+        data.forEach(ev => {
+            const sevClass =
+                ev.severity === "Critical" ? "critical" :
+                ev.severity === "High" ? "high" :
+                ev.severity === "Medium" ? "medium" : "low";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${ev.time}</td>
+                <td><span class="badge ${sevClass}">${ev.severity}</span></td>
+                <td>${ev.signature}</td>
+                <td>${ev.src_ip}</td>
+                <td>${ev.dst_ip}</td>
+                <td>${ev.proto}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("IDS fetch failed:", err);
+    }
+}
+
+// ---------- NETWORK: TOP TALKERS ----------
+async function loadTopTalkers() {
+    const tbody = document.getElementById("talkers-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${NET_API}/top-talkers`);
+        const data = await res.json();
+        data.forEach(t => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${t.ip}</td>
+                <td>${t.direction}</td>
+                <td>${t.throughput_mbps} Mbps</td>
+                <td>${t.flows}</td>
+                <td>${t.tags.map(x => `<span class="tag">${x}</span>`).join("")}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Top talkers fetch failed:", err);
+    }
+}
+
+// ---------- NETWORK: SUSPICIOUS PORTS ----------
+async function loadSuspiciousPorts() {
+    const tbody = document.getElementById("ports-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${NET_API}/suspicious-ports`);
+        const data = await res.json();
+        data.forEach(p => {
+            const sevClass =
+                p.severity === "Critical" ? "critical" :
+                p.severity === "High" ? "high" :
+                p.severity === "Medium" ? "medium" : "low";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${p.port}</td>
+                <td>${p.proto}</td>
+                <td>${p.hits}</td>
+                <td><span class="badge ${sevClass}">${p.severity}</span></td>
+                <td>${p.notes}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Suspicious ports fetch failed:", err);
+    }
+}
+
+// ---------- NETWORK: HEALTH ----------
+async function updateNetworkHealth() {
+    try {
+        const res = await fetch(`${NET_API}/health`);
+        const data = await res.json();
+        document.getElementById("health-blocked").textContent = data.blocked_connections;
+        document.getElementById("health-critical").textContent = data.critical_alerts;
+        document.getElementById("health-blocked-bar").style.width =
+            Math.min(100, data.blocked_connections / 10) + "%";
+        document.getElementById("health-critical-bar").style.width =
+            Math.min(100, data.critical_alerts * 7) + "%";
+        document.getElementById("health-status").textContent = data.status;
+        document.getElementById("health-status-sub").textContent = data.status_detail;
+    } catch (err) {
+        console.error("Health fetch failed:", err);
+    }
+}
+
+// ---------- NETWORK: ANOMALY SPARKLINE ----------
+const anomalyCanvas = document.getElementById("anomaly-canvas");
+const ctx = anomalyCanvas.getContext("2d");
+let anomalyData = [];
+
+function resizeCanvas() {
+    anomalyCanvas.width = anomalyCanvas.clientWidth;
+    anomalyCanvas.height = anomalyCanvas.clientHeight;
+}
+window.addEventListener("resize", () => {
+    resizeCanvas();
+    drawAnomalySparkline();
+});
+function pushAnomalyPoint() {
+    if (anomalyData.length > 40) anomalyData.shift();
+    const last = anomalyData[anomalyData.length - 1] || 0.2;
+    const next = Math.max(0, Math.min(1, last + (Math.random() - 0.5) * 0.3));
+    anomalyData.push(next);
+    document.getElementById("anomaly-score").textContent = next.toFixed(2);
+    document.getElementById("anomaly-count").textContent = Math.round(next * 10);
+}
+function drawAnomalySparkline() {
+    const w = anomalyCanvas.width;
+    const h = anomalyCanvas.height;
+    ctx.clearRect(0,0,w,h);
+    if (anomalyData.length < 2) return;
+    ctx.beginPath();
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 2;
+    anomalyData.forEach((v, i) => {
+        const x = (i / (anomalyData.length - 1)) * w;
+        const y = h - v * h;
+        if (i === 0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+}
+function tickAnomaly() {
+    pushAnomalyPoint();
+    drawAnomalySparkline();
+}
+
+// ---------- SYSTEM HEALTH ----------
+async function loadSystemHealth() {
+    try {
+        const res = await fetch(`${SYS_API}/system-health`);
+        const data = await res.json();
+        document.getElementById("sys-cpu").textContent = data.cpu_usage + "%";
+        document.getElementById("sys-mem").textContent = data.mem_usage + "%";
+        document.getElementById("sys-disk").textContent = data.disk_usage + "%";
+        document.getElementById("sys-proc").textContent = data.process_count;
+        document.getElementById("sys-cpu-bar").style.width = data.cpu_usage + "%";
+        document.getElementById("sys-mem-bar").style.width = data.mem_usage + "%";
+        document.getElementById("sys-disk-bar").style.width = data.disk_usage + "%";
+        document.getElementById("sys-status").textContent = data.status;
+        document.getElementById("sys-status-sub").textContent = data.detail;
+    } catch (err) {
+        console.error("System health fetch failed:", err);
+    }
+}
+
+// ---------- CYBER THREAT ----------
+async function loadThreatIntel() {
+    const tbody = document.getElementById("threat-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${THREAT_API}/threats`);
+        const data = await res.json();
+        data.forEach(t => {
+            const sevClass =
+                t.severity === "Critical" ? "critical" :
+                t.severity === "High" ? "high" :
+                t.severity === "Medium" ? "medium" : "low";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${t.time}</td>
+                <td>${t.type}</td>
+                <td>${t.indicator}</td>
+                <td><span class="badge ${sevClass}">${t.severity}</span></td>
+                <td>${t.source}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Threat intel fetch failed:", err);
+    }
+}
+
+async function loadVulns() {
+    const tbody = document.getElementById("vuln-body");
+    tbody.innerHTML = "";
+    try {
+        const res = await fetch(`${THREAT_API}/vulns`);
+        const data = await res.json();
+        data.forEach(v => {
+            const sevClass =
+                v.severity === "Critical" ? "critical" :
+                v.severity === "High" ? "high" :
+                v.severity === "Medium" ? "medium" : "low";
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${v.cve}</td>
+                <td><span class="badge ${sevClass}">${v.severity}</span></td>
+                <td>${v.asset}</td>
+                <td>${v.status}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error("Vulns fetch failed:", err);
+    }
+}
+
+// ---------- SOC CONSOLE ----------
+async function loadAlerts() {
+    const list = document.getElementById("alerts-list");
+    list.innerHTML = "";
+    try {
+        const res = await fetch(`${SOC_API}/alerts`);
+        const data = await res.json();
+        data.forEach(a => {
+            const sevClass =
+                a.severity === "Critical" ? "log-sev-critical" :
+                a.severity === "High" ? "log-sev-high" :
+                a.severity === "Medium" ? "log-sev-medium" : "log-sev-low";
+            const div = document.createElement("div");
+            div.className = "log-item";
+            div.innerHTML = `
+                <span class="log-time">${a.time}</span>
+                <span class="${sevClass}">${a.severity}</span>
+                <span>– ${a.message}</span>
+            `;
+            list.appendChild(div);
+        });
+    } catch (err) {
+        console.error("Alerts fetch failed:", err);
+    }
+}
+
+async function loadSocStatus() {
+    try {
+        const res = await fetch(`${SOC_API}/soc-status`);
+        const data = await res.json();
+        document.getElementById("soc-open").textContent = data.open_incidents;
+        document.getElementById("soc-analysts").textContent = data.active_analysts;
+    } catch (err) {
+        console.error("SOC status fetch failed:", err);
+    }
+}
+
+// ---------- INIT ----------
+document.getElementById("fw-refresh").onclick = loadFirewallEvents;
+document.getElementById("ids-refresh").onclick = loadIDSAlerts;
+document.getElementById("talkers-refresh").onclick = loadTopTalkers;
+document.getElementById("ports-refresh").onclick = loadSuspiciousPorts;
+document.getElementById("sys-refresh").onclick = loadSystemHealth;
+document.getElementById("threat-refresh").onclick = () => { loadThreatIntel(); loadVulns(); };
+document.getElementById("vuln-refresh").onclick = loadVulns;
+document.getElementById("alerts-refresh").onclick = () => { loadAlerts(); loadSocStatus(); };
+
+resizeCanvas();
+for (let i = 0; i < 20; i++) pushAnomalyPoint();
+drawAnomalySparkline();
+
+// Initial loads
+loadFirewallEvents();
+loadIDSAlerts();
+loadTopTalkers();
+loadSuspiciousPorts();
+updateNetworkHealth();
+loadSystemHealth();
+loadThreatIntel();
+loadVulns();
+loadAlerts();
+loadSocStatus();
+
+// Auto refresh
+setInterval(loadFirewallEvents, 15000);
+setInterval(loadIDSAlerts, 15000);
+setInterval(loadTopTalkers, 20000);
+setInterval(loadSuspiciousPorts, 20000);
+setInterval(updateNetworkHealth, 8000);
+setInterval(loadSystemHealth, 15000);
+setInterval(() => { loadThreatIntel(); loadVulns(); }, 30000);
+setInterval(() => { loadAlerts(); loadSocStatus(); }, 15000);
+setInterval(tickAnomaly, 1200);
+</script>
+</body>
+</html>

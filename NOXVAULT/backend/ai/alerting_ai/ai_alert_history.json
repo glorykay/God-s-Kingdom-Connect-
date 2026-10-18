@@ -1,0 +1,52 @@
+[
+  {
+    "id": "48291",
+    "timestamp": "2026-09-14T18:20:11Z",
+    "type": "Malware Detected",
+    "severity": "Critical",
+    "description": "Malware signature matched by NOXVAULT engine",
+    "source_ip": "192.168.1.44",
+    "host": "WIN-SERVER-01",
+    "user": "SYSTEM"
+  },
+  {
+    "id": "59302",
+    "timestamp": "2026-09-14T18:18:47Z",
+    "type": "Unauthorized Login",
+    "severity": "High",
+    "description": "Multiple failed login attempts detected",
+    "source_ip": "192.168.1.77",
+    "host": "AUTH-SERVER",
+    "user": "unknown"
+  },
+  {
+    "id": "10433",
+    "timestamp": "2026-09-14T18:17:03Z",
+    "type": "Suspicious Traffic",
+    "severity": "Medium",
+    "description": "Outbound traffic to known malicious domain",
+    "source_ip": "192.168.1.122",
+    "host": "WEB-GATEWAY",
+    "user": "proxy"
+  },
+  {
+    "id": "21984",
+    "timestamp": "2026-09-14T18:15:29Z",
+    "type": "High CPU Usage",
+    "severity": "Low",
+    "description": "Process exceeded CPU threshold",
+    "source_ip": "192.168.1.33",
+    "host": "APP-SERVER-02",
+    "user": "svc-app"
+  },
+  {
+    "id": "33012",
+    "timestamp": "2026-09-14T18:14:02Z",
+    "type": "Firewall Rule Triggered",
+    "severity": "Medium",
+    "description": "Firewall blocked unauthorized outbound connection",
+    "source_ip": "192.168.1.88",
+    "host": "FIREWALL-EDGE",
+    "user": "system"
+  }
+]

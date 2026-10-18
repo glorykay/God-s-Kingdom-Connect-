@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOXVAULT Unified SOC</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #0b0f19;
+            color: #e5e7eb;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 22px 60px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .nav-logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .nav-links a {
+            margin-left: 30px;
+            color: #e5e7eb;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover {
+            color: #3b82f6;
+        }
+
+        /* HERO SECTION */
+        .hero {
+            position: relative;
+            padding: 200px 60px 160px;
+            text-align: left;
+            overflow: hidden;
+        }
+
+        /* Animated gradient background */
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(120deg, #0b0f19, #1e3a8a, #0b0f19);
+            background-size: 200% 200%;
+            animation: gradientMove 12s ease infinite;
+            z-index: -3;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Cyber grid overlay */
+        .hero::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+            z-index: -2;
+        }
+
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to { transform: translateY(-200px); }
+        }
+
+        /* CYBER NEON CIRCUIT ANIMATION */
+        .circuit-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .circuit-line {
+            position: absolute;
+            width: 2px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(59,130,246,0), #3b82f6, rgba(59,130,246,0));
+            opacity: 0.4;
+            animation: circuitMove 4s linear infinite;
+        }
+
+        @keyframes circuitMove {
+            0% { transform: translateY(-150px); }
+            100% { transform: translateY(100vh); }
+        }
+
+        /* HERO TEXT ANIMATION */
+        .hero-title {
+            font-size: 58px;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1.2s ease forwards;
+        }
+
+        .hero-sub {
+            font-size: 20px;
+            margin-top: 20px;
+            color: #cbd5e1;
+            max-width: 700px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1.2s ease forwards;
+            animation-delay: 0.3s;
+        }
+
+        .hero-buttons {
+            margin-top: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeUp 1.2s ease forwards;
+            animation-delay: 0.6s;
+        }
+
+        @keyframes fadeUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-primary {
+            padding: 14px 28px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+        }
+
+        .btn-secondary {
+            padding: 14px 28px;
+            background: transparent;
+            border: 1px solid #3b82f6;
+            border-radius: 6px;
+            color: #3b82f6;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(59,130,246,0.1);
+        }
+
+        /* FEATURES SECTION */
+        .section {
+            padding: 100px 60px;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 30px;
+        }
+
+        .feature-box {
+            background: #111827;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid #1e293b;
+            transition: 0.2s;
+        }
+
+        .feature-box:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #3b82f6;
+        }
+
+        .feature-desc {
+            font-size: 15px;
+            color: #94a3b8;
+        }
+
+        /* FOOTER */
+        footer {
+            background: #0f172a;
+            padding: 40px;
+            text-align: center;
+            border-top: 1px solid #1e293b;
+            margin-top: 80px;
+        }
+
+        footer a {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="nav-logo">NOXVAULT</div>
+    <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#contact">Contact</a>
+        <a href="dashboard.html">Dashboard</a>
+    </div>
+</div>
+
+<!-- HERO WITH ANIMATION -->
+<div class="hero">
+
+    <!-- CYBER CIRCUIT LINES -->
+    <div class="circuit-lines">
+        <div class="circuit-line" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="circuit-line" style="left: 25%; animation-delay: 1s;"></div>
+        <div class="circuit-line" style="left: 40%; animation-delay: 0.5s;"></div>
+        <div class="circuit-line" style="left: 60%; animation-delay: 1.5s;"></div>
+        <div class="circuit-line" style="left: 75%; animation-delay: 0.2s;"></div>
+        <div class="circuit-line" style="left: 90%; animation-delay: 1.2s;"></div>
+    </div>
+
+    <div class="hero-title">Unified SOC Platform for Enterprise‑Grade Security</div>
+    <div class="hero-sub">
+        NOXVAULT delivers real‑time threat detection, system intelligence, vulnerability analytics, and device health scoring — built for modern security operations centers.
+    </div>
+
+    <div class="hero-buttons">
+        <button class="btn-primary" onclick="window.location.href='dashboard.html'">Open Dashboard</button>
+        <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Learn More</button>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<div id="features" class="section">
+    <div class="section-title">Enterprise‑Grade Capabilities</div>
+
+    <div class="features-grid">
+
+        <div class="feature-box">
+            <div class="feature-title">Real‑Time System Audits</div>
+            <div class="feature-desc">Monitor CPU, memory, storage, OS, and network activity across all connected devices.</div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-title">Threat & Vulnerability Intelligence</div>
+            <div class="feature-desc">Automated scanning and detection powered by advanced security analytics.</div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-title">Unified Device Health Scoring</div>
+            <div class="feature-desc">Evaluate endpoint security posture with automated scoring algorithms.</div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-title">Firewall & Event Monitoring</div>
+            <div class="feature-desc">Track firewall status, rule changes, and system‑level security events.</div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-title">Secure API Integration</div>
+            <div class="feature-desc">FastAPI‑powered backend with structured endpoints for SOC dashboards and agents.</div>
+        </div>
+
+        <div class="feature-box">
+            <div class="feature-title">Enterprise‑Ready Architecture</div>
+            <div class="feature-desc">Built for scalability, reliability, and real‑time operational visibility.</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer id="contact">
+    <p>Contact:
+        <a href="mailto:glorykayembe02@gmail.com">glorykayembe02@gmail.com</a> •
+        <a href="tel:+15133161796">+1 (513) 316‑1796</a>
+    </p>
+    <p>Cincinnati, Ohio • © 2026 NOXVAULT Security</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,259 @@
+/* ====== GLOBAL ====== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+body {
+    background: #f5f6fa;
+    color: #333;
+}
+
+/* ====== LAYOUT ====== */
+.layout {
+    display: flex;
+    height: 100vh;
+}
+
+/* ====== SIDEBAR (DARK) ====== */
+.sidebar {
+    width: 260px;
+    background: #1e1f26;
+    border-right: 1px solid #2a2b32;
+    padding: 20px 0;
+    overflow-y: auto;
+}
+
+.sidebar-title {
+    font-size: 18px;
+    font-weight: 600;
+    padding: 0 20px 20px 20px;
+    color: #ffffff;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-menu li {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    color: #d0d0d0;
+    transition: 0.2s;
+}
+
+.sidebar-menu li i {
+    font-size: 18px;
+    margin-right: 12px;
+    color: #9aa0b1;
+}
+
+.sidebar-menu li:hover {
+    background: #2a2c36;
+}
+
+.sidebar-menu li.active {
+    background: #3b82f6;
+    color: white;
+}
+
+.sidebar-menu li.active i {
+    color: white;
+}
+
+/* ====== MAIN ====== */
+.main {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+}
+
+/* ====== HEADER ====== */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.header-left h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.header-meta {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #555;
+}
+
+.header-meta span {
+    margin-right: 15px;
+}
+
+.btn {
+    padding: 10px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+/* ====== SUMMARY CARDS ====== */
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.summary-card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid #e1e1e1;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.summary-icon i {
+    font-size: 28px;
+    color: #3b82f6;
+}
+
+.summary-label {
+    font-size: 14px;
+    color: #555;
+}
+
+.summary-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111;
+}
+
+.summary-sub {
+    font-size: 12px;
+    color: #777;
+}
+
+.score-bar {
+    width: 100%;
+    height: 6px;
+    background: #e1e1e1;
+    border-radius: 4px;
+    margin-top: 6px;
+}
+
+.score-bar-fill {
+    height: 6px;
+    background: #3b82f6;
+    border-radius: 4px;
+    width: 0%;
+}
+
+/* ====== PANELS ====== */
+.panel {
+    background: white;
+    border: 1px solid #e1e1e1;
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.panel-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 12px;
+}
+
+/* ====== GRID LAYOUTS ====== */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.grid-2-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* ====== TABLES ====== */
+.kv-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.kv-table tr td {
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+.kv-table tr td:first-child {
+    font-weight: 600;
+    color: #333;
+    width: 45%;
+}
+
+.kv-table tr td:last-child {
+    color: #555;
+}
+
+/* ====== CRITICAL LIST ====== */
+.critical-list {
+    list-style: none;
+}
+
+.critical-list li {
+    padding: 8px 0;
+    font-size: 14px;
+    border-bottom: 1px solid #eee;
+}
+
+/* ====== EVENTS TABLE ====== */
+.events-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.events-table th {
+    background: #f0f2f5;
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.events-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* ====== CHART (FIXED SIZE) ====== */
+.chart-container {
+    width: 100%;
+    height: 140px;   /* FIXED SMALLER SIZE */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}

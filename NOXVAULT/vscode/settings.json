@@ -1,0 +1,12 @@
+
+{
+  "python.analysis.extraPaths": [
+    "./",
+    "./backend",
+    "./backend/agents",
+    "./backend/alerts"
+  ],
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore"
+}

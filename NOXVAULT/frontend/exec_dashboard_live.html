@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT – Executive Cyber Risk Dashboard (Live)</title>
+
+<style>
+  :root {
+    --bg: #020617;
+    --panel: #0a0f1f;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #22c55e;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.4);
+  }
+
+  .panel-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .risk-gauge {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: conic-gradient(
+      var(--critical) 0deg 60deg,
+      var(--high) 60deg 140deg,
+      var(--medium) 140deg 220deg,
+      var(--low) 220deg 300deg,
+      #020617 300deg 360deg
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .risk-gauge::after {
+    content: "";
+    position: absolute;
+    width: 105px;
+    height: 105px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+  }
+
+  .risk-score {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+  }
+
+  .risk-score-main {
+    font-size: 32px;
+    font-weight: 600;
+  }
+
+  .risk-score-tag {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    margin-top: 4px;
+    display: inline-block;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .bar-label {
+    width: 140px;
+    color: var(--muted);
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 6px;
+    background: #0f172a;
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  th, td {
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  th {
+    text-transform: uppercase;
+    color: var(--muted);
+    font-size: 10px;
+  }
+
+  .sev-pill {
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    border: 1px solid transparent;
+  }
+
+  .sev-critical { background: #450a0a; color: #fecaca; border-color: #ef4444; }
+  .sev-high { background: #422006; color: #fed7aa; border-color: #f97316; }
+  .sev-medium { background: #3f3f06; color: #fef9c3; border-color: #eab308; }
+  .sev-low { background: #052e16; color: #bbf7d0; border-color: #22c55e; }
+
+  .status-pill {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+</style>
+</head>
+
+<body>
+
+<h1>NOXVAULT – Executive Cyber Risk Dashboard</h1>
+<div class="sub">Live enterprise cyber posture, updated automatically via API + WebSocket + Agent.</div>
+
+<div class="status-pill">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">Connecting…</span>
+</div>
+
+<!-- TOP GRID -->
+<div class="grid">
+  <div class="panel">
+    <div class="panel-title">Enterprise Risk Score</div>
+    <div style="display:flex; gap:20px;">
+      <div class="risk-gauge">
+        <div class="risk-score">
+          <div class="risk-score-main" id="risk-score">--</div>
+          <div class="risk-score-tag" id="risk-band">--</div>
+        </div>
+      </div>
+      <div style="font-size:12px; color:var(--muted);">
+        Current enterprise risk is <strong id="risk-text-level">--</strong>.
+        <br><br>
+        Updated: <span id="generated-at">--</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Key Executive Indicators</div>
+    <div class="grid-3">
+      <div>
+        <div id="kpi-open-incidents" style="font-size:22px;font-weight:600;">--</div>
+        <div style="font-size:11px;color:var(--muted);">Open Incidents</div>
+        <div id="kpi-open-incidents-trend" style="font-size:11px;">--</div>
+      </div>
+      <div>
+        <div id="kpi-mean-ttd" style="font-size:22px;font-weight:600;">--</div>
+        <div style="font-size:11px;color:var(--muted);">Mean Time to Detect</div>
+        <div id="kpi-mean-ttd-trend" style="font-size:11px;">--</div>
+      </div>
+      <div>
+        <div id="kpi-compliance" style="font-size:22px;font-weight:600;">--</div>
+        <div style="font-size:11px;color:var(--muted);">Compliance</div>
+        <div id="kpi-compliance-trend" style="font-size:11px;">--</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MIDDLE GRID -->
+<div class="grid">
+  <div class="panel">
+    <div class="panel-title">Compliance Breakdown</div>
+    <div id="bar-compliance"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Attack Surface Exposure</div>
+    <div id="bar-attack-surface"></div>
+  </div>
+</div>
+
+<!-- INCIDENTS + VULNS -->
+<div class="grid">
+  <div class="panel">
+    <div class="panel-title">Active Incidents</div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Severity</th><th>Status</th><th>Owner</th><th>Age</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-incidents"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Top Vulnerabilities</div>
+    <table>
+      <thead>
+        <tr>
+          <th>CVE</th><th>Severity</th><th>Assets</th><th>Exploit</th><th>Target</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-vulns"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const API_BASE = "http://127.0.0.1:8030";
+  const SNAPSHOT_ENDPOINT = API_BASE + "/exec/snapshot";
+  const WS_ENDPOINT = "ws://127.0.0.1:8030/ws/exec";
+
+  function renderBarChart(containerId, items) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+    if (!items) return;
+
+    const max = Math.max(...items.map(i => i.value), 1);
+
+    items.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "bar-row";
+
+      row.innerHTML = `
+        <div class="bar-label">${item.label}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(item.value/max)*100}%"></div></div>
+        <div style="width:40px;text-align:right;">${item.value}%</div>
+      `;
+
+      container.appendChild(row);
+    });
+  }
+
+  function renderIncidents(list) {
+    const tbody = document.getElementById("tbl-incidents");
+    tbody.innerHTML = "";
+    list.forEach(i => {
+      const sevClass = {
+        "Critical": "sev-critical",
+        "High": "sev-high",
+        "Medium": "sev-medium",
+        "Low": "sev-low"
+      }[i.sev] || "sev-medium";
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${i.id}</td>
+          <td><span class="sev-pill ${sevClass}">${i.sev}</span></td>
+          <td>${i.status}</td>
+          <td>${i.owner}</td>
+          <td>${i.age}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function renderVulns(list) {
+    const tbody = document.getElementById("tbl-vulns");
+    tbody.innerHTML = "";
+    list.forEach(v => {
+      const sevClass = {
+        "Critical": "sev-critical",
+        "High": "sev-high",
+        "Medium": "sev-medium",
+        "Low": "sev-low"
+      }[v.sev] || "sev-medium";
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${v.cve}</td>
+          <td><span class="sev-pill ${sevClass}">${v.sev}</span></td>
+          <td>${v.assets}</td>
+          <td>${v.exploit}</td>
+          <td>${v.target}</td>
+        </tr>
+      `;
+    });
+  }
+
+  function applySnapshot(snap) {
+    document.getElementById("risk-score").textContent = snap.risk.score;
+    document.getElementById("risk-band").textContent = snap.risk.band;
+    document.getElementById("risk-text-level").textContent = snap.risk.text_level;
+    document.getElementById("generated-at").textContent =
+      new Date(snap.generated_at).toLocaleString();
+
+    document.getElementById("kpi-open-incidents").textContent = snap.kpis.open_incidents;
+    document.getElementById("kpi-open-incidents-trend").textContent = snap.kpis.open_incidents_trend;
+    document.getElementById("kpi-mean-ttd").textContent = snap.kpis.mean_ttd;
+    document.getElementById("kpi-mean-ttd-trend").textContent = snap.kpis.mean_ttd_trend;
+    document.getElementById("kpi-compliance").textContent = snap.kpis.compliance;
+    document.getElementById("kpi-compliance-trend").textContent = snap.kpis.compliance_trend;
+
+    renderBarChart("bar-compliance", snap.compliance_breakdown);
+    renderBarChart("bar-attack-surface", snap.attack_surface);
+    renderIncidents(snap.incidents);
+    renderVulns(snap.vulns);
+  }
+
+  async function pollSnapshot() {
+    try {
+      const res = await fetch(SNAPSHOT_ENDPOINT, { cache: "no-store" });
+      const snap = await res.json();
+      applySnapshot(snap);
+    } catch (err) {
+      console.error("Polling error:", err);
+    }
+  }
+
+  function connectWS() {
+    const ws = new WebSocket(WS_ENDPOINT);
+
+    ws.onopen = () => {
+      document.getElementById("status-text").textContent = "Live (WebSocket)";
+      document.getElementById("status-dot").style.background = "#22c55e";
+    };
+
+    ws.onmessage = (e) => {
+      const snap = JSON.parse(e.data);
+      applySnapshot(snap);
+    };
+
+    ws.onclose = () => {
+      document.getElementById("status-text").textContent = "Reconnecting…";
+      document.getElementById("status-dot").style.background = "#eab308";
+      setTimeout(connectWS, 2000);
+    };
+  }
+
+  pollSnapshot();
+  setInterval(pollSnapshot, 15000);
+  connectWS();
+</script>
+
+</body>
+</html>

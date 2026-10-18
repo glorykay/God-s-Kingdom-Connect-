@@ -1,0 +1,56 @@
+Installer log.txt for X-Plane Installer 5.4.0-r1 (e03fa36cea10a0075f8a4e67e7f5975c3c10c4c3)
+Compiled on Jun 24 2026 02:08:53
+Installer Started on Tue Jun 30 20:04:37 2026
+
+This log file is generated automatically by Laminar Research applications and contains diagnostics about your graphics hardware, installation, and any error conditions.
+If you need to contact tech support or file a bug, please send us this file. NOTE: this file is rewritten every time you start ANY of your X-System applications.
+
+macOS: Version 26.5.1 (Build 25F80)
+CPU type: Intel Core i9-9980HK CPU - Speed: 2.4-2.8 GHz - Cores: 16 Bus speed (mhz): 400 RAM (MB): 32768
+
+X-System folder:'', case sensitive=0
+
+0:00:00.000 E/GFX/MTL: Discovered Metal device: Intel(R) UHD Graphics 630, but it's unusable
+0:00:00.000 E/GFX/MTL: Device reported: Your graphics card does not have enough VRAM.
+X-Plane needs a graphics card with at least 2 gb of VRAM, your card reports 1.50 gb
+0:00:00.000 I/GFX/MTL: Discovered Metal device: AMD Radeon Pro 5500M, Metal. Score: 1000
+0:00:00.000 I/GFX/MTL: 
+Selected device:
+Metal Device        : AMD Radeon Pro 5500M
+
+GPU family 1 v1     : 1	GPU family 1 v2     : 1	GPU family 1 v3     : 1	GPU family 1 v4     : 1	
+GPU family 2 v1     : 1	
+0:00:00.000 I/GFX: 
+anisotropic_avail   : 1	coarse_timer_avail  : 1	precise_timer_avail : 1	tess_avail          : 1	geom_avail          : 0	
+viewport_arr        : 1	layer_arr           : 1	native_reverse_z    : 1	has_reverse_z       : 1	
+persistent map      : 1	msaa shader write   : 0	shader float16      : 0	shader int16        : 1	
+rebar_avail         : 0	alpha_to_one_avail  : 0	msaa_storage_image_avail: 0	
+sparse bindings     : 0	sparse page size    : 0	
+max iso filtering   : 16
+max samples         : 3
+max texture size    : 16384 (hardware limit)
+max tex units       : 16
+
+This video card is bucketed as: Metal
+0:00:00.000 I/GFX: Diagnostics         : memory	
+Device memory       : 8573157376
+Host memory         : 0
+
+
+0:00:00.000 I/WMG: Monitor 0: { 0, 0, 1792, 1120 }
+CPU count        : 16
+WARNING: we are missing the texture: RESOURCE:new_HUD.png.
+os_dir_this_app       =/private/var/folders/mx/qdzd924131qf_g_210c3y1l80000gn/T/AppTranslocation/1D94A287-68EE-4E1D-A1E0-33F7023AACDF/d/
+os_dir_desktop        =/Users/user/Desktop/
+os_dir_definstall     =/Users/user/
+os_dir_temp           =/var/folders/mx/qdzd924131qf_g_210c3y1l80000gn/T/
+os_dir_prefs          =/Users/user/Library/Preferences/
+
+0:00:00.000 D/INS: Unscripted start as: update existing demo - user needs upgrade, no purchase
+0:00:00.000 I/WEBSRV: Port 8086 bound
+0:00:00.000 I/WEBSRV: Port 50705 bound
+0:00:00.000 D/WIZ: Starting installer... opening wizard step "Main Menu - Existing Demo Installation"
+0:00:14.479 D/WIZ: Advancing from wizard step "Welcome" to "Run X-Plane"
+0:00:14.479 I/DST: Set initial target to /Users/user/X-Plane 12/
+Launching: /Users/user/X-Plane 12/X-Plane.app with 
+Clean exit from threads.

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT – Firewall Log Collector (Live)</title>
+
+<style>
+  :root {
+    --bg: #020617;
+    --panel: #0a0f1f;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #22c55e;
+    --critical: #ef4444;
+    --high: #f97316;
+    --medium: #eab308;
+    --low: #22c55e;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, sans-serif;
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 18px;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.4);
+  }
+
+  .card-header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+
+  .card h2 {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .status-pill {
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    color:var(--muted);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+
+  .status-dot {
+    width:7px;
+    height:7px;
+    border-radius:999px;
+    background:#22c55e;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  th, td {
+    padding: 8px 6px;
+    border-bottom: 1px solid #1e293b;
+    white-space: nowrap;
+  }
+
+  th {
+    text-transform: uppercase;
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  tr:hover {
+    background: #0f172a;
+  }
+
+  .badge {
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    display: inline-block;
+  }
+
+  .critical { background: #450a0a; color: #fecaca; border: 1px solid #ef4444; }
+  .high { background: #422006; color: #fed7aa; border: 1px solid #f97316; }
+  .medium { background: #3f3f06; color: #fef9c3; border: 1px solid #eab308; }
+  .low { background: #052e16; color: #bbf7d0; border: 1px solid #22c55e; }
+
+  .btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    background: #052e16;
+    color: #bbf7d0;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .btn:hover {
+    background: #064e1a;
+  }
+
+  .meta {
+    font-size:11px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .meta span {
+    margin-right:14px;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>NOXVAULT – Firewall Log Collector</h1>
+<div class="sub">Live view of firewall events ingested by NOXVAULT from your agents / sensors.</div>
+
+<div class="card">
+  <div class="card-header">
+    <h2>Live Firewall Events</h2>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div class="status-pill">
+        <div class="status-dot" id="status-dot"></div>
+        <span id="status-text">Connected</span>
+      </div>
+      <button class="btn" id="btn-refresh">Refresh now</button>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Action</th>
+        <th>Src IP</th>
+        <th>Dst IP</th>
+        <th>Src Port</th>
+        <th>Dst Port</th>
+        <th>Proto</th>
+        <th>Rule</th>
+        <th>Firewall</th>
+      </tr>
+    </thead>
+    <tbody id="log-body"></tbody>
+  </table>
+
+  <div class="meta">
+    <span id="meta-count">0 events</span>
+    <span id="meta-updated">Last update: –</span>
+    <span id="meta-endpoint">Endpoint: <code id="meta-endpoint-url"></code></span>
+  </div>
+</div>
+
+<script>
+  // 🔗 CHANGE THIS to match your FastAPI backend
+  const API_BASE = "http://127.0.0.1:8020";
+  const FIREWALL_ENDPOINT = API_BASE + "/firewall";
+
+  document.getElementById("meta-endpoint-url").textContent = FIREWALL_ENDPOINT;
+
+  async function fetchFirewallEvents() {
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+
+    try {
+      statusDot.style.background = "#eab308";
+      statusText.textContent = "Refreshing…";
+
+      const res = await fetch(FIREWALL_ENDPOINT, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+
+      renderFirewallTable(data);
+
+      statusDot.style.background = "#22c55e";
+      statusText.textContent = "Connected";
+
+      const now = new Date();
+      document.getElementById("meta-updated").textContent =
+        "Last update: " + now.toLocaleTimeString();
+      document.getElementById("meta-count").textContent =
+        (data?.length || 0) + " events";
+    } catch (err) {
+      console.error("Fetch error:", err);
+      statusDot.style.background = "#ef4444";
+      statusText.textContent = "Error";
+    }
+  }
+
+  function renderFirewallTable(events) {
+    const tbody = document.getElementById("log-body");
+    tbody.innerHTML = "";
+
+    if (!Array.isArray(events)) return;
+
+    events.forEach(ev => {
+      const action = (ev.action || "").toUpperCase();
+      let sevClass = "low";
+      if (["BLOCK", "DENY", "DROP"].includes(action)) sevClass = "critical";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${ev.time || ""}</td>
+        <td><span class="badge ${sevClass}">${action}</span></td>
+        <td>${ev.src_ip || ""}</td>
+        <td>${ev.dst_ip || ""}</td>
+        <td>${ev.src_port ?? ""}</td>
+        <td>${ev.dst_port ?? ""}</td>
+        <td>${(ev.proto || "").toUpperCase()}</td>
+        <td>${ev.rule || ""}</td>
+        <td>${ev.firewall || ""}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById("btn-refresh").addEventListener("click", fetchFirewallEvents);
+
+  // initial load + polling
+  fetchFirewallEvents();
+  setInterval(fetchFirewallEvents, 5000);
+</script>
+
+</body>
+</html>

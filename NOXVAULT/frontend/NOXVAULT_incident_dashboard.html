@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NOXVAULT – Threat Intel & Incident Response</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #020617;
+      --bg-elevated: #020617;
+      --border-subtle: #1f2937;
+      --border-strong: #374151;
+      --text-main: #e5e7eb;
+      --text-muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-soft: #022c22;
+      --critical: #ef4444;
+      --high: #f97316;
+      --medium: #eab308;
+      --low: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      background:#020617;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 16px;
+    }
+
+    .shell { max-width: 1280px; margin: 0 auto; }
+
+    header {
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;
+    }
+
+    .brand { display:flex;align-items:center;gap:8px; }
+
+    .brand-mark {
+      width:24px;height:24px;border-radius:8px;
+      background:radial-gradient(circle at 30% 0,#22c55e,#16a34a,#0f172a);
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;color:#e5e7eb;
+    }
+
+    .brand-text { display:flex;flex-direction:column; }
+
+    .brand-title { font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase; }
+
+    .brand-sub { font-size:11px;color:var(--text-muted); }
+
+    .top-controls { display:flex;align-items:center;gap:12px; }
+
+    .pill {
+      font-size:11px;padding:4px 10px;border-radius:999px;
+      border:1px solid #374151;background:#020617;color:var(--text-muted);
+    }
+
+    .pill-dot { width:6px;height:6px;border-radius:999px;background:#22c55e;margin-right:6px; }
+
+    .pill-flex { display:flex;align-items:center;gap:6px; }
+
+    .incident-toggle-wrapper { display:flex;align-items:center;gap:8px; }
+
+    .incident-toggle-label { font-size:11px;color:#9ca3af; }
+
+    .incident-toggle {
+      width:42px;height:22px;border-radius:999px;
+      background:#ffffff;border:1px solid #e5e7eb;
+      display:flex;align-items:center;padding:2px;
+      cursor:pointer;transition:background 0.2s;
+    }
+
+    .incident-toggle-knob {
+      width:18px;height:18px;border-radius:999px;
+      background:#111827;transition:transform 0.2s;
+    }
+
+    main { display:grid;grid-template-columns:2fr 1.6fr;gap:16px; }
+
+    .column { display:flex;flex-direction:column;gap:12px; }
+
+    .section {
+      background:var(--bg-elevated);border-radius:16px;border:1px solid var(--border-subtle);padding:14px 16px;
+    }
+
+    .section-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:10px; }
+
+    .section-header h2 { font-size:13px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted); }
+
+    .section-sub { font-size:11px;color:var(--text-muted);margin-top:2px; }
+
+    .btn-pill {
+      font-size:11px;padding:4px 10px;border-radius:999px;
+      border:1px solid var(--border-strong);background:#020617;color:var(--text-main);cursor:pointer;
+    }
+
+    .btn-pill.primary { border-color:var(--accent);background:var(--accent-soft);color:#bbf7d0; }
+
+    .btn-pill.danger { border-color:var(--critical);background:#450a0a;color:#fecaca; }
+
+    .btn-pill.small { font-size:10px;padding:2px 8px; }
+
+    table { width:100%;border-collapse:collapse;font-size:11px; }
+
+    th,td { padding:6px 8px;border-bottom:1px solid #111827;text-align:left;white-space:nowrap; }
+
+    th { font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted); }
+
+    tr:hover { background:#020617;cursor:pointer; }
+
+    .badge {
+      display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;
+      font-size:10px;border:1px solid transparent;
+    }
+
+    .badge.critical { border-color:rgba(248,113,113,0.4);background:rgba(127,29,29,0.6);color:#fecaca; }
+    .badge.high { border-color:rgba(251,146,60,0.4);background:rgba(124,45,18,0.6);color:#fed7aa; }
+    .badge.medium { border-color:rgba(250,204,21,0.4);background:rgba(113,63,18,0.6);color:#fef9c3; }
+    .badge.low { border-color:rgba(52,211,153,0.4);background:rgba(6,78,59,0.6);color:#a7f3d0; }
+
+    .field-label { font-size:11px;color:var(--text-muted);margin-bottom:2px; }
+
+    .field-input,.field-select,.field-textarea {
+      width:100%;padding:6px 8px;border-radius:8px;border:1px solid var(--border-strong);
+      background:#020617;color:var(--text-main);font-size:12px;outline:none;
+    }
+
+    .field-textarea { resize:vertical;min-height:60px; }
+
+    .field-input:focus,.field-select:focus,.field-textarea:focus {
+      border-color:var(--accent);box-shadow:0 0 0 1px rgba(34,197,94,0.3);
+    }
+
+    .timeline { margin-top:8px;border-left:1px solid #1f2937;padding-left:10px;max-height:260px;overflow-y:auto; }
+
+    .timeline-item { margin-bottom:10px;position:relative;padding-left:8px; }
+
+    .timeline-item::before {
+      content:"";position:absolute;left:-11px;top:4px;width:7px;height:7px;border-radius:999px;
+      background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.2);
+    }
+
+    .timeline-meta { font-size:10px;color:var(--text-muted);margin-bottom:2px; }
+    .timeline-text { font-size:11px;color:var(--text-main); }
+
+    .small { font-size:11px;color:var(--text-muted); }
+
+    #incident-drawer { transform:translateX(20px);opacity:0;transition:transform 0.2s ease-out,opacity 0.2s ease-out;pointer-events:none; }
+    #incident-drawer.visible { transform:translateX(0);opacity:1;pointer-events:auto; }
+
+    .search-row { display:flex;gap:8px;margin-bottom:8px; }
+
+    .mitre-autocomplete-list {
+      position:absolute;z-index:20;background:#020617;border:1px solid #1f2937;border-radius:8px;
+      max-height:180px;overflow-y:auto;width:100%;margin-top:2px;
+    }
+
+    .mitre-item { padding:4px 8px;font-size:11px;cursor:pointer; }
+    .mitre-item:hover { background:#111827; }
+
+    .ioc-pill {
+      display:inline-flex;align-items:center;gap:4px;font-size:10px;
+      padding:2px 6px;border-radius:999px;border:1px solid #374151;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-mark">N</div>
+        <div class="brand-text">
+          <div class="brand-title">NOXVAULT</div>
+          <div class="brand-sub">Threat Intel & Incident Response</div>
+        </div>
+      </div>
+      <div class="top-controls">
+        <div class="pill pill-flex">
+          <div class="pill-dot"></div>
+          <span>Live Threat Intel</span>
+        </div>
+        <div class="incident-toggle-wrapper">
+          <span class="incident-toggle-label">Incident Mode</span>
+          <div id="incident-toggle" class="incident-toggle">
+            <div id="incident-toggle-knob" class="incident-toggle-knob"></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- LEFT: THREAT INTEL -->
+      <div class="column">
+        <!-- IP Reputation -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>IP Reputation</h2>
+              <div class="section-sub">Live reputation for suspicious IPs</div>
+            </div>
+            <button id="btn-refresh-ip" class="btn-pill">Refresh</button>
+          </div>
+
+          <!-- NEW: IP input -->
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input id="ip-input" class="field-input" placeholder="Enter IP to check (default 8.8.8.8)..." />
+            <button id="btn-check-ip" class="btn-pill small">Check</button>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>IP</th>
+                <th>Score</th>
+                <th>Rep</th>
+                <th>Country</th>
+                <th>ASN</th>
+                <th>Tags</th>
+                <th>Last Seen</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ip-body"></tbody>
+          </table>
+        </section>
+
+        <!-- Malware Campaigns -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>Malware Campaigns</h2>
+              <div class="section-sub">Active campaigns targeting your surface</div>
+            </div>
+            <button id="btn-refresh-mw" class="btn-pill">Refresh</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Family</th>
+                <th>Severity</th>
+                <th>First Seen</th>
+                <th>Last Seen</th>
+                <th>IOCs</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="mw-body"></tbody>
+          </table>
+        </section>
+
+        <!-- Dark Web Leaks -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>Dark Web Leaks</h2>
+              <div class="section-sub">Mentions of your assets on dark web</div>
+            </div>
+            <button id="btn-refresh-dw" class="btn-pill">Refresh</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Source</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Discovered</th>
+                <th>Description</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="dw-body"></tbody>
+          </table>
+        </section>
+      </div>
+
+      <!-- RIGHT: BOTNET / GEO / INCIDENTS -->
+      <div class="column">
+        <!-- Botnet C2 -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>Botnet C2</h2>
+              <div class="section-sub">Known C2 infrastructure</div>
+            </div>
+            <button id="btn-refresh-c2" class="btn-pill">Refresh</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>IP</th>
+                <th>Port</th>
+                <th>Family</th>
+                <th>Status</th>
+                <th>Last Seen</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="c2-body"></tbody>
+          </table>
+        </section>
+
+        <!-- Geo Threats -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>Geo Threats</h2>
+              <div class="section-sub">Recent hostile activity by region</div>
+            </div>
+            <button id="btn-refresh-geo" class="btn-pill">Refresh</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>IP</th>
+                <th>Country</th>
+                <th>Type</th>
+                <th>Severity</th>
+                <th>Lat</th>
+                <th>Lon</th>
+                <th>Time</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="geo-body"></tbody>
+          </table>
+        </section>
+
+        <!-- INCIDENT RESPONSE -->
+        <section class="section">
+          <div class="section-header">
+            <div>
+              <h2>Incident Response</h2>
+              <div class="section-sub">Create, triage, and track SOC incidents</div>
+            </div>
+            <button id="btn-new-incident" class="btn-pill primary">+ New Incident</button>
+          </div>
+
+          <div class="search-row">
+            <input id="incident-search" class="field-input" placeholder="Search incidents by ID, title, tags, analyst..." />
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Analyst</th>
+                <th>Tags</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="incidents-body"></tbody>
+          </table>
+        </section>
+
+        <!-- INCIDENT DRAWER -->
+        <section id="incident-drawer" class="section">
+          <div class="section-header">
+            <div>
+              <h2 id="drawer-title">Incident Details</h2>
+              <div class="section-sub" id="drawer-sub"></div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Title</div>
+            <input id="detail-title" class="field-input" disabled />
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <div style="flex:1;">
+              <div class="field-label">Severity</div>
+              <select id="detail-severity" class="field-select">
+                <option>Critical</option>
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
+            </div>
+            <div style="flex:1;">
+              <div class="field-label">Status</div>
+              <select id="detail-status" class="field-select">
+                <option>Open</option>
+                <option>Investigating</option>
+                <option>Resolved</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Analyst</div>
+            <input id="detail-analyst" class="field-input" placeholder="Assigned analyst" />
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Tags (comma separated)</div>
+            <input id="detail-tags" class="field-input" placeholder="e.g., lateral-movement, privilege-escalation" />
+          </div>
+
+          <!-- MITRE AUTOCOMPLETE -->
+          <div style="margin-bottom:8px;position:relative;">
+            <div class="field-label">MITRE ATT&CK</div>
+            <input id="detail-mitre-search" class="field-input" placeholder="Search MITRE by ID or technique..." />
+            <div id="mitre-list" class="mitre-autocomplete-list" style="display:none;"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <div style="flex:1;">
+              <div class="field-label">MITRE ID</div>
+              <input id="detail-mitre-id" class="field-input" placeholder="e.g., T1021" />
+            </div>
+            <div style="flex:2;">
+              <div class="field-label">Technique</div>
+              <input id="detail-mitre-technique" class="field-input" placeholder="e.g., Remote Services" />
+            </div>
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Evidence URL</div>
+            <input id="detail-evidence" class="field-input" />
+          </div>
+
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Upload Evidence File</div>
+            <input id="detail-evidence-file" type="file" style="font-size:11px;color:#e5e7eb;" />
+          </div>
+
+          <!-- IOC CORRELATION -->
+          <div style="margin-bottom:8px;">
+            <div class="field-label">Correlated IOC</div>
+            <div id="ioc-correlation" class="small">No IOC linked.</div>
+          </div>
+
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <button id="btn-save-meta" class="btn-pill primary">Save Changes</button>
+            <button id="btn-resolve" class="btn-pill danger">Mark Resolved</button>
+          </div>
+
+          <hr style="border:none;border-top:1px solid #111827;margin:8px 0;" />
+
+          <div class="field-label">Add Note</div>
+          <textarea id="note-text" class="field-textarea" placeholder="Document actions, findings, escalations..."></textarea>
+
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <input id="note-author" class="field-input" placeholder="Analyst name" />
+            <button id="btn-add-note" class="btn-pill primary">Add</button>
+          </div>
+
+          <div class="field-label" style="margin-top:8px;">Timeline</div>
+          <div id="timeline" class="timeline"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000";
+    const INCIDENT_API = "http://127.0.0.1:8002";
+
+    // INCIDENT MODE TOGGLE
+    let incidentMode = false;
+    const toggleBtn = document.getElementById("incident-toggle");
+    const toggleKnob = document.getElementById("incident-toggle-knob");
+
+    toggleBtn.addEventListener("click", () => {
+      incidentMode = !incidentMode;
+      toggleKnob.style.transform = incidentMode ? "translateX(20px)" : "translateX(0)";
+    });
+
+    async function fetchJSON(url) {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }
+
+    // ---------- THREAT INTEL + IOC → INCIDENT ----------
+    function createIOCIncidentPayload(type, data) {
+      if (type === "ip") {
+        return {
+          title: `Suspicious IP ${data.ip}`,
+          severity: data.reputation === "Malicious" ? "High" : "Medium",
+          tags: ["ip-reputation", ...(data.tags || [])].join(","),
+          mitre_id: "",
+          mitre_technique: "",
+          evidence_url: "",
+          source_ioc: data.ip,
+          source_type: "ip-reputation",
+        };
+      }
+
+      if (type === "malware") {
+        return {
+          title: `Malware campaign ${data.name}`,
+          severity: data.severity || "High",
+          tags: ["malware-campaign"].join(","),
+          mitre_id: "",
+          mitre_technique: "",
+          evidence_url: "",
+          source_ioc: data.id,
+          source_type: "malware-campaign",
+        };
+      }
+
+      if (type === "darkweb") {
+        return {
+          title: `Dark web leak ${data.id}`,
+          severity: data.severity || "High",
+          tags: ["darkweb-leak"].join(","),
+          mitre_id: "",
+          mitre_technique: "",
+          evidence_url: "",
+          source_ioc: data.id,
+          source_type: "darkweb-leak",
+        };
+      }
+
+      if (type === "c2") {
+        return {
+          title: `Botnet C2 ${data.ip}:${data.port}`,
+          severity: "High",
+          tags: ["botnet-c2"].join(","),
+          mitre_id: "",
+          mitre_technique: "",
+          evidence_url: "",
+          source_ioc: data.ip,
+          source_type: "botnet-c2",
+        };
+      }
+
+      if (type === "geo") {
+        return {
+          title: `Geo threat from ${data.ip}`,
+          severity: data.severity || "Medium",
+          tags: ["geo-threat", data.type].join(","),
+          mitre_id: "",
+          mitre_technique: "",
+          evidence_url: "",
+          source_ioc: data.ip,
+          source_type: "geo-threat",
+        };
+      }
+
+      return null;
+    }
+
+    async function createIncidentFromIOC(type, data) {
+      const payload = createIOCIncidentPayload(type, data);
+      if (!payload) return;
+
+      const form = new FormData();
+      form.append("title", payload.title);
+      form.append("severity", payload.severity);
+      form.append("analyst", "Unassigned");
+      form.append("tags", payload.tags);
+      form.append("mitre_id", payload.mitre_id);
+      form.append("mitre_technique", payload.mitre_technique);
+      form.append("evidence_url", payload.evidence_url);
+      form.append("source_ioc", payload.source_ioc);
+      form.append("source_type", payload.source_type);
+
+      await fetch(`${INCIDENT_API}/incidents`, {
+        method: "POST",
+        body: form,
+      });
+
+      await loadIncidents();
+    }
+
+    async function loadIPReputation(ip) {
+      try {
+        const inputEl = document.getElementById("ip-input");
+        const targetIp = ip || (inputEl.value.trim() || "8.8.8.8");
+
+        const data = await fetchJSON(`${API_BASE}/api/ip-reputation?ip=${encodeURIComponent(targetIp)}`);
+
+        const tbody = document.getElementById("ip-body");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+
+          const sevClass =
+            row.reputation === "Malicious" ? "critical" :
+            row.reputation === "Suspicious" ? "high" : "low";
+
+          tr.innerHTML = `
+            <td>${row.ip}</td>
+            <td>${row.score}</td>
+            <td><span class="badge ${sevClass}">${row.reputation}</span></td>
+            <td>${row.country}</td>
+            <td>${row.asn}</td>
+            <td>${row.tags.join(", ")}</td>
+            <td>${row.last_seen}</td>
+            <td><button class="btn-pill small">Create Incident</button></td>
+          `;
+
+          const btn = tr.querySelector("button");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            createIncidentFromIOC("ip", row);
+          };
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("IP reputation load failed", e);
+      }
+    }
+
+    async function loadMalwareCampaigns() {
+      try {
+        const data = await fetchJSON(`${API_BASE}/api/malware-campaigns`);
+        const tbody = document.getElementById("mw-body");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const sevClass =
+            row.severity === "Critical" ? "critical" :
+            row.severity === "High" ? "high" :
+            row.severity === "Medium" ? "medium" : "low";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.id}</td>
+            <td>${row.name}</td>
+            <td>${row.family}</td>
+            <td><span class="badge ${sevClass}">${row.severity}</span></td>
+            <td>${row.first_seen}</td>
+            <td>${row.last_seen}</td>
+            <td>${row.iocs.join(", ")}</td>
+            <td><button class="btn-pill small">Create Incident</button></td>
+          `;
+
+          const btn = tr.querySelector("button");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            createIncidentFromIOC("malware", row);
+          };
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("Malware campaigns load failed", e);
+      }
+    }
+
+    async function loadDarkWebLeaks() {
+      try {
+        const data = await fetchJSON(`${API_BASE}/api/darkweb-leaks`);
+        const tbody = document.getElementById("dw-body");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const sevClass =
+            row.severity === "Critical" ? "critical" :
+            row.severity === "High" ? "high" :
+            row.severity === "Medium" ? "medium" : "low";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.id}</td>
+            <td>${row.source}</td>
+            <td>${row.type}</td>
+            <td><span class="badge ${sevClass}">${row.severity}</span></td>
+            <td>${row.discovered_at}</td>
+            <td>${row.description}</td>
+            <td><button class="btn-pill small">Create Incident</button></td>
+          `;
+
+          const btn = tr.querySelector("button");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            createIncidentFromIOC("darkweb", row);
+          };
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("Dark web leaks load failed", e);
+      }
+    }
+
+    async function loadBotnetC2() {
+      try {
+        const data = await fetchJSON(`${API_BASE}/api/botnet-c2`);
+        const tbody = document.getElementById("c2-body");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.id}</td>
+            <td>${row.ip}</td>
+            <td>${row.port}</td>
+            <td>${row.family}</td>
+            <td>${row.status}</td>
+            <td>${row.last_seen}</td>
+            <td><button class="btn-pill small">Create Incident</button></td>
+          `;
+
+          const btn = tr.querySelector("button");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            createIncidentFromIOC("c2", row);
+          };
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("Botnet C2 load failed", e);
+      }
+    }
+
+    async function loadGeoThreats() {
+      try {
+        const data = await fetchJSON(`${API_BASE}/api/geo-threats`);
+        const tbody = document.getElementById("geo-body");
+        tbody.innerHTML = "";
+
+        data.forEach(row => {
+          const sevClass =
+            row.severity === "Critical" ? "critical" :
+            row.severity === "High" ? "high" :
+            row.severity === "Medium" ? "medium" : "low";
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.ip}</td>
+            <td>${row.country}</td>
+            <td>${row.type}</td>
+            <td><span class="badge ${sevClass}">${row.severity}</span></td>
+            <td>${row.lat.toFixed(2)}</td>
+            <td>${row.lon.toFixed(2)}</td>
+            <td>${row.timestamp}</td>
+            <td><button class="btn-pill small">Create Incident</button></td>
+          `;
+
+          const btn = tr.querySelector("button");
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            createIncidentFromIOC("geo", row);
+          };
+
+          tbody.appendChild(tr);
+        });
+
+      } catch (e) {
+        console.error("Geo threats load failed", e);
+      }
+    }
+
+    document.getElementById("btn-refresh-ip").onclick = () => loadIPReputation();
+    document.getElementById("btn-check-ip").onclick = () => loadIPReputation();
+    document.getElementById("btn-refresh-mw").onclick = loadMalwareCampaigns;
+    document.getElementById("btn-refresh-dw").onclick = loadDarkWebLeaks;
+    document.getElementById("btn-refresh-c2").onclick = loadBotnetC2;
+    document.getElementById("btn-refresh-geo").onclick = loadGeoThreats;
+
+    // initial load
+    loadIPReputation();
+    loadMalwareCampaigns();
+    loadDarkWebLeaks();
+    loadBotnetC2();
+    loadGeoThreats();
+
+    // auto-refresh every 30s
+    setInterval(() => {
+      loadIPReputation();
+      loadMalwareCampaigns();
+      loadDarkWebLeaks();
+      loadBotnetC2();
+      loadGeoThreats();
+      loadIncidents();
+    }, 30000);
+
+    // ---------- INCIDENT RESPONSE ----------
+    let allIncidents = [];
+    let selectedIncident = null;
+
+    async function loadIncidents() {
+      try {
+        const data = await fetchJSON(`${INCIDENT_API}/incidents`);
+        allIncidents = data;
+        renderIncidentTable();
+      } catch (e) {
+        console.error("Incidents load failed", e);
+      }
+    }
+
+    function renderIncidentTable() {
+      const tbody = document.getElementById("incidents-body");
+      const q = document.getElementById("incident-search").value.toLowerCase().trim();
+      tbody.innerHTML = "";
+
+      allIncidents
+        .slice()
+        .sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at))
+        .filter(inc => {
+          if (!q) return true;
+          const hay = [
+            inc.id,
+            inc.title,
+            inc.status,
+            inc.analyst || "",
+            (inc.tags || []).join(" "),
+            inc.mitre_id || "",
+            inc.mitre_technique || "",
+            inc.source_ioc || "",
+            inc.source_type || ""
+          ].join(" ").toLowerCase();
+          return hay.includes(q);
+        })
+        .forEach(inc => {
+          const tr = document.createElement("tr");
+          const sevClass =
+            inc.severity === "Critical" ? "critical" :
+            inc.severity === "High" ? "high" :
+            inc.severity === "Medium" ? "medium" : "low";
+
+          tr.innerHTML = `
+            <td>${inc.id}</td>
+            <td>${inc.title}</td>
+            <td><span class="badge ${sevClass}">${inc.severity}</span></td>
+            <td>${inc.status}</td>
+            <td>${inc.analyst || ""}</td>
+            <td>${(inc.tags || []).join(", ")}</td>
+            <td>${inc.updated_at}</td>
+          `;
+
+          tr.onclick = () => openIncidentDrawer(inc);
+          tbody.appendChild(tr);
+        });
+    }
+
+    document.getElementById("incident-search").addEventListener("input", renderIncidentTable);
+
+    function openIncidentDrawer(inc) {
+      selectedIncident = inc;
+      const drawer = document.getElementById("incident-drawer");
+      drawer.classList.add("visible");
+
+      document.getElementById("drawer-title").textContent = inc.title;
+      document.getElementById("drawer-sub").textContent = `Tracking ${inc.id}`;
+      document.getElementById("detail-title").value = inc.title;
+      document.getElementById("detail-severity").value = inc.severity;
+      document.getElementById("detail-status").value = inc.status;
+      document.getElementById("detail-analyst").value = inc.analyst || "";
+      document.getElementById("detail-tags").value = (inc.tags || []).join(", ");
+      document.getElementById("detail-mitre-id").value = inc.mitre_id || "";
+      document.getElementById("detail-mitre-technique").value = inc.mitre_technique || "";
+      document.getElementById("detail-evidence").value = inc.evidence_url || "";
+
+      if (inc.source_ioc) {
+        document.getElementById("ioc-correlation").innerHTML =
+          `<span class="ioc-pill"><span>${inc.source_type || "ioc"}</span><span>•</span><span>${inc.source_ioc}</span></span>`;
+      } else {
+        document.getElementById("ioc-correlation").textContent = "No IOC linked.";
+      }
+
+      renderTimeline(inc);
+    }
+
+    function renderTimeline(inc) {
+      const tl = document.getElementById("timeline");
+      tl.innerHTML = "";
+
+      if (!inc.notes || inc.notes.length === 0) {
+        tl.innerHTML = `<div class="small">No notes yet. Start documenting actions and findings.</div>`;
+        return;
+      }
+
+      inc.notes.forEach(n => {
+        const div = document.createElement("div");
+        div.className = "timeline-item";
+        div.innerHTML = `
+          <div class="timeline-meta">${n.timestamp} • ${n.author}</div>
+          <div class="timeline-text">${n.text}</div>
+        `;
+        tl.appendChild(div);
+      });
+    }
+
+    document.getElementById("btn-save-meta").onclick = async () => {
+      if (!selectedIncident) return;
+
+      const form = new FormData();
+      form.append("severity", document.getElementById("detail-severity").value);
+      form.append("status", document.getElementById("detail-status").value);
+      form.append("analyst", document.getElementById("detail-analyst").value);
+      form.append("tags", document.getElementById("detail-tags").value);
+      form.append("mitre_id", document.getElementById("detail-mitre-id").value);
+      form.append("mitre_technique", document.getElementById("detail-mitre-technique").value);
+      form.append("evidence_url", document.getElementById("detail-evidence").value);
+
+      await fetch(`${INCIDENT_API}/incidents/${selectedIncident.id}/update`, {
+        method: "POST",
+        body: form,
+      });
+
+      const fileInput = document.getElementById("detail-evidence-file");
+      if (fileInput.files[0]) {
+        const form2 = new FormData();
+        form2.append("evidence", fileInput.files[0]);
+
+        await fetch(`${INCIDENT_API}/incidents/${selectedIncident.id}/evidence`, {
+          method: "POST",
+          body: form2,
+        });
+
+        fileInput.value = "";
+      }
+
+      await loadIncidents();
+    };
+
+    document.getElementById("btn-resolve").onclick = async () => {
+      if (!selectedIncident) return;
+
+      const form = new FormData();
+      form.append("severity", selectedIncident.severity);
+      form.append("status", "Resolved");
+      form.append("analyst", selectedIncident.analyst || "");
+      form.append("tags", (selectedIncident.tags || []).join(","));
+      form.append("mitre_id", selectedIncident.mitre_id || "");
+      form.append("mitre_technique", selectedIncident.mitre_technique || "");
+      form.append("evidence_url", selectedIncident.evidence_url || "");
+
+      await fetch(`${INCIDENT_API}/incidents/${selectedIncident.id}/update`, {
+        method: "POST",
+        body: form,
+      });
+
+      await loadIncidents();
+    };
+
+    document.getElementById("btn-add-note").onclick = async () => {
+      if (!selectedIncident) return;
+
+      const text = document.getElementById("note-text").value.trim();
+      const author = document.getElementById("note-author").value.trim() || "Analyst";
+      if (!text) return;
+
+      const form = new FormData();
+      form.append("author", author);
+      form.append("text", text);
+
+      await fetch(`${INCIDENT_API}/incidents/${selectedIncident.id}/note`, {
+        method: "POST",
+        body: form,
+      });
+
+      document.getElementById("note-text").value = "";
+      await loadIncidents();
+    };
+
+    document.getElementById("btn-new-incident").onclick = async () => {
+      const title = prompt("Incident title:");
+      if (!title) return;
+
+      const severity = prompt("Severity (Critical/High/Medium/Low):", "Medium") || "Medium";
+      const analyst = prompt("Analyst:", "Glory") || "Glory";
+      const tags = prompt("Tags (comma separated):", "suspicious-login") || "";
+      const mitre_id = prompt("MITRE ID (e.g., T1021):", "") || "";
+      const mitre_technique = prompt("MITRE Technique:", "") || "";
+
+      const form = new FormData();
+      form.append("title", title);
+      form.append("severity", severity);
+      form.append("analyst", analyst);
+      form.append("tags", tags);
+      form.append("mitre_id", mitre_id);
+      form.append("mitre_technique", mitre_technique);
+      form.append("evidence_url", "");
+
+      await fetch(`${INCIDENT_API}/incidents`, {
+        method: "POST",
+        body: form,
+      });
+
+      await loadIncidents();
+    };
+
+    // ---------- MITRE AUTOCOMPLETE ----------
+    const mitreSearch = document.getElementById("detail-mitre-search");
+    const mitreList = document.getElementById("mitre-list");
+    let mitreTimeout = null;
+
+    mitreSearch.addEventListener("input", () => {
+      const q = mitreSearch.value.trim();
+      if (mitreTimeout) clearTimeout(mitreTimeout);
+      mitreTimeout = setTimeout(() => loadMitre(q), 200);
+    });
+
+    async function loadMitre(q) {
+      if (!q) {
+        mitreList.style.display = "none";
+        return;
+      }
+
+      try {
+        const data = await fetchJSON(`${INCIDENT_API}/mitre-techniques?q=${encodeURIComponent(q)}`);
+        mitreList.innerHTML = "";
+
+        if (!data.length) {
+          mitreList.style.display = "none";
+          return;
+        }
+
+        data.forEach(t => {
+          const div = document.createElement("div");
+          div.className = "mitre-item";
+          div.textContent = `${t.id} – ${t.technique} (${t.tactic})`;
+          div.onclick = () => {
+            document.getElementById("detail-mitre-id").value = t.id;
+            document.getElementById("detail-mitre-technique").value = t.technique;
+            mitreList.style.display = "none";
+          };
+          mitreList.appendChild(div);
+        });
+
+        mitreList.style.display = "block";
+      } catch (e) {
+        console.error("MITRE load failed", e);
+      }
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!mitreList.contains(e.target) && e.target !== mitreSearch) {
+        mitreList.style.display = "none";
+      }
+    });
+
+    loadIncidents();
+    setInterval(loadIncidents, 30000);
+  </script>
+</body>
+</html>

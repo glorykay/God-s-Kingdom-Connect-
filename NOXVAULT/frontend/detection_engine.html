@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NOXVAULT SOC Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+    :root {
+        --bg: #0d1117;
+        --bg-alt: #161b22;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --border: #30363d;
+        --accent: #3b82f6;
+        --card: #111827;
+        --node-host: #22c55e;
+        --node-user: #a855f7;
+        --node-ip: #f97316;
+        --node-rule: #38bdf8;
+    }
+
+    [data-theme="light"] {
+        --bg: #f5f5f5;
+        --bg-alt: #ffffff;
+        --text: #111827;
+        --muted: #6b7280;
+        --border: #d4d4d8;
+        --accent: #2563eb;
+        --card: #ffffff;
+        --node-host: #16a34a;
+        --node-user: #7c3aed;
+        --node-ip: #ea580c;
+        --node-rule: #0284c7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    .sidebar {
+        width: 240px;
+        background: var(--bg-alt);
+        border-right: 1px solid var(--border);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .sidebar h2 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--accent);
+    }
+
+    .nav-item {
+        padding: 10px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        color: var(--text);
+        border: 1px solid transparent;
+        font-size: 14px;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+        background: var(--accent);
+        color: #fff;
+    }
+
+    .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .topbar {
+        padding: 14px 20px;
+        background: var(--bg-alt);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .theme-toggle {
+        padding: 8px 14px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: var(--card);
+        cursor: pointer;
+        color: var(--text);
+        font-size: 13px;
+    }
+
+    .content {
+        flex: 1;
+        padding: 16px;
+        overflow: hidden;
+    }
+
+    .tab { display: none; height: 100%; }
+    .tab.active { display: block; }
+
+    .card {
+        background: var(--card);
+        padding: 16px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        margin-bottom: 16px;
+        font-size: 14px;
+    }
+
+    .card h3 {
+        margin: 0 0 6px;
+        font-size: 16px;
+    }
+
+    .muted { color: var(--muted); font-size: 13px; }
+
+    /* Graph area */
+    .graph-wrapper {
+        position: relative;
+        width: 100%;
+        height: calc(100% - 90px);
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        background: radial-gradient(circle at top, rgba(15,23,42,0.9), var(--bg));
+        overflow: hidden;
+    }
+
+    canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .graph-legend {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: rgba(15,23,42,0.9);
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        backdrop-filter: blur(8px);
+    }
+
+    .graph-legend div {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+    }
+
+    .legend-host { background: var(--node-host); }
+    .legend-user { background: var(--node-user); }
+    .legend-ip { background: var(--node-ip); }
+    .legend-rule { background: var(--node-rule); }
+
+    .graph-info {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15,23,42,0.9);
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--muted);
+        backdrop-filter: blur(8px);
+    }
+
+    .graph-tooltip {
+        position: absolute;
+        pointer-events: none;
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: rgba(15,23,42,0.95);
+        border: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--text);
+        max-width: 260px;
+        display: none;
+        z-index: 10;
+    }
+
+    .graph-tooltip strong {
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .graph-tooltip span {
+        display: block;
+        color: var(--muted);
+    }
+</style>
+</head>
+
+<body data-theme="dark">
+
+<div class="sidebar">
+    <h2>NOXVAULT SOC</h2>
+
+    <div class="nav-item active" data-tab="detection">Detection Engine</div>
+    <div class="nav-item" data-tab="graph">Graph Visualization</div>
+    <div class="nav-item" data-tab="mitre">MITRE ATT&CK</div>
+    <div class="nav-item" data-tab="timeline">Host Timeline</div>
+    <div class="nav-item" data-tab="process">Process Tree</div>
+    <div class="nav-item" data-tab="heatmap">Threat Heatmap</div>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <h2 id="tab-title">Detection Engine</h2>
+        <button class="theme-toggle" id="theme-btn">Switch to Light Mode</button>
+    </div>
+
+    <div class="content">
+        <!-- Detection Engine placeholder -->
+        <div class="tab active" id="tab-detection">
+            <div class="card">
+                <h3>Detection Engine Overview</h3>
+                <p class="muted">
+                    This panel can embed your detection_engine.html or live alerts table.
+                    The Graph tab below visualizes relationships between hosts, users, IPs, and rules from the same alerts.
+                </p>
+            </div>
+        </div>
+
+        <!-- DARKTRACE-STYLE GRAPH TAB -->
+        <div class="tab" id="tab-graph">
+            <div class="card">
+                <h3>Darktrace‑Style Graph Visualization</h3>
+                <p class="muted">
+                    Live attack graph built from NOXVAULT alerts — hosts, users, IPs, and detection rules connected in real time.
+                </p>
+            </div>
+
+            <div class="graph-wrapper">
+                <canvas id="graph-canvas"></canvas>
+
+                <div class="graph-legend">
+                    <div><span class="legend-dot legend-host"></span> Host</div>
+                    <div><span class="legend-dot legend-user"></span> User</div>
+                    <div><span class="legend-dot legend-ip"></span> IP</div>
+                    <div><span class="legend-dot legend-rule"></span> Rule / Engine</div>
+                </div>
+
+                <div class="graph-info" id="graph-info">
+                    Nodes: 0 · Links: 0 · Live from /ws/alerts
+                </div>
+
+                <div class="graph-tooltip" id="graph-tooltip"></div>
+            </div>
+        </div>
+
+        <!-- Other tabs placeholders -->
+        <div class="tab" id="tab-mitre">
+            <div class="card"><h3>MITRE ATT&CK Mapping</h3><p class="muted">MITRE panel will go here.</p></div>
+        </div>
+
+        <div class="tab" id="tab-timeline">
+            <div class="card"><h3>Host Timeline View</h3><p class="muted">Timeline view will go here.</p></div>
+        </div>
+
+        <div class="tab" id="tab-process">
+            <div class="card"><h3>Process Tree Visualization</h3><p class="muted">Process tree will go here.</p></div>
+        </div>
+
+        <div class="tab" id="tab-heatmap">
+            <div class="card"><h3>Threat Heatmap</h3><p class="muted">Heatmap will go here.</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // TAB SWITCHING
+    const navItems = document.querySelectorAll(".nav-item");
+    const tabs = document.querySelectorAll(".tab");
+    const tabTitle = document.getElementById("tab-title");
+
+    navItems.forEach(item => {
+        item.addEventListener("click", () => {
+            navItems.forEach(i => i.classList.remove("active"));
+            item.classList.add("active");
+
+            const tab = item.dataset.tab;
+            tabTitle.textContent = item.textContent;
+
+            tabs.forEach(t => t.classList.remove("active"));
+            document.getElementById("tab-" + tab).classList.add("active");
+        });
+    });
+
+    // THEME SWITCHER
+    const themeBtn = document.getElementById("theme-btn");
+    const body = document.body;
+
+    themeBtn.addEventListener("click", () => {
+        const current = body.getAttribute("data-theme");
+        const next = current === "dark" ? "light" : "dark";
+        body.setAttribute("data-theme", next);
+        themeBtn.textContent =
+            next === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode";
+    });
+
+    // -----------------------------
+    // DARKTRACE-STYLE GRAPH ENGINE
+    // -----------------------------
+    const canvas = document.getElementById("graph-canvas");
+    const ctx = canvas.getContext("2d");
+    const tooltip = document.getElementById("graph-tooltip");
+    const graphInfo = document.getElementById("graph-info");
+
+    let width, height;
+    function resizeCanvas() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        canvas.width = width;
+        canvas.height = height;
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    const nodes = [];   // {id, label, type, x, y, vx, vy, fixed}
+    const links = [];   // {source, target, weight, severity}
+    const nodeIndex = new Map(); // id -> node
+
+    function getNodeColor(type) {
+        if (type === "host") return getComputedStyle(document.body).getPropertyValue("--node-host");
+        if (type === "user") return getComputedStyle(document.body).getPropertyValue("--node-user");
+        if (type === "ip") return getComputedStyle(document.body).getPropertyValue("--node-ip");
+        return getComputedStyle(document.body).getPropertyValue("--node-rule");
+    }
+
+    function addNode(id, label, type) {
+        if (nodeIndex.has(id)) return nodeIndex.get(id);
+        const node = {
+            id,
+            label,
+            type,
+            x: width / 2 + (Math.random() - 0.5) * 200,
+            y: height / 2 + (Math.random() - 0.5) * 200,
+            vx: 0,
+            vy: 0
+        };
+        nodes.push(node);
+        nodeIndex.set(id, node);
+        return node;
+    }
+
+    function addLink(sourceId, targetId, severity) {
+        const s = nodeIndex.get(sourceId);
+        const t = nodeIndex.get(targetId);
+        if (!s || !t) return;
+        links.push({ source: s, target: t, severity });
+    }
+
+    function severityWeight(sev) {
+        if (sev === "critical") return 2.0;
+        if (sev === "high") return 1.5;
+        if (sev === "medium") return 1.0;
+        return 0.7;
+    }
+
+    function buildGraphFromAlert(alert) {
+        const sev = alert.severity || "medium";
+
+        const ruleId = alert.rule_id || "RULE";
+        const hostId = alert.host || null;
+        const userId = alert.user || null;
+        const srcIp = alert.src_ip || null;
+        const dstIp = alert.dst_ip || null;
+
+        const ruleNode = addNode("rule:" + ruleId, ruleId, "rule");
+
+        if (hostId) {
+            const hostNode = addNode("host:" + hostId, hostId, "host");
+            addLink(ruleNode.id, hostNode.id, sev);
+        }
+
+        if (userId) {
+            const userNode = addNode("user:" + userId, userId, "user");
+            addLink(ruleNode.id, userNode.id, sev);
+        }
+
+        if (srcIp) {
+            const ipNode = addNode("ip:" + srcIp, srcIp, "ip");
+            addLink(ruleNode.id, ipNode.id, sev);
+        }
+
+        if (dstIp && dstIp !== srcIp) {
+            const ipNode = addNode("ip:" + dstIp, dstIp, "ip");
+            addLink(ruleNode.id, ipNode.id, sev);
+        }
+
+        graphInfo.textContent = `Nodes: ${nodes.length} · Links: ${links.length} · Live from /ws/alerts`;
+    }
+
+    // Simple force simulation
+    function tick() {
+        const centerX = width / 2;
+        const centerY = height / 2;
+
+        // Repulsion
+        const repulsion = 12000;
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const a = nodes[i];
+                const b = nodes[j];
+                let dx = a.x - b.x;
+                let dy = a.y - b.y;
+                let dist2 = dx * dx + dy * dy + 0.01;
+                let force = repulsion / dist2;
+                let d = Math.sqrt(dist2);
+                if (d > 0) {
+                    dx /= d;
+                    dy /= d;
+                }
+                a.vx += dx * force;
+                a.vy += dy * force;
+                b.vx -= dx * force;
+                b.vy -= dy * force;
+            }
+        }
+
+        // Links (springs)
+        links.forEach(link => {
+            const a = link.source;
+            const b = link.target;
+            let dx = b.x - a.x;
+            let dy = b.y - a.y;
+            let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const desired = 90;
+            const k = 0.02 * severityWeight(link.severity);
+            const diff = dist - desired;
+            dx /= dist;
+            dy /= dist;
+            const fx = dx * diff * k;
+            const fy = dy * diff * k;
+            a.vx += fx;
+            a.vy += fy;
+            b.vx -= fx;
+            b.vy -= fy;
+        });
+
+        // Centering + damping
+        nodes.forEach(n => {
+            n.vx += (centerX - n.x) * 0.001;
+            n.vy += (centerY - n.y) * 0.001;
+
+            n.vx *= 0.85;
+            n.vy *= 0.85;
+
+            n.x += n.vx * 0.016;
+            n.y += n.vy * 0.016;
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+
+        // Links
+        ctx.lineWidth = 1;
+        links.forEach(link => {
+            const a = link.source;
+            const b = link.target;
+            const w = severityWeight(link.severity);
+            ctx.strokeStyle = `rgba(148,163,184,${0.25 + w * 0.15})`;
+            ctx.lineWidth = 0.7 + w * 0.4;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+        });
+
+        // Nodes
+        nodes.forEach(n => {
+            const color = getNodeColor(n.type);
+            ctx.beginPath();
+            ctx.fillStyle = color;
+            ctx.strokeStyle = "rgba(15,23,42,0.9)";
+            ctx.lineWidth = 1.2;
+            ctx.arc(n.x, n.y, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+        });
+    }
+
+    function animate() {
+        tick();
+        draw();
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Tooltip
+    canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        let closest = null;
+        let minDist = 14;
+
+        nodes.forEach(n => {
+            const dx = n.x - mx;
+            const dy = n.y - my;
+            const d = Math.sqrt(dx * dx + dy * dy);
+            if (d < minDist) {
+                minDist = d;
+                closest = n;
+            }
+        });
+
+        if (closest) {
+            tooltip.style.display = "block";
+            tooltip.style.left = (e.clientX + 10) + "px";
+            tooltip.style.top = (e.clientY + 10) + "px";
+            tooltip.innerHTML = `
+                <strong>${closest.label}</strong>
+                <span>Type: ${closest.type}</span>
+            `;
+        } else {
+            tooltip.style.display = "none";
+        }
+    });
+
+    canvas.addEventListener("mouseleave", () => {
+        tooltip.style.display = "none";
+    });
+
+    // WebSocket: consume alerts and build graph
+    function connectWS() {
+        const ws = new WebSocket("ws://localhost:8000/ws/alerts");
+
+        ws.onopen = () => {
+            graphInfo.textContent = `Nodes: ${nodes.length} · Links: ${links.length} · Connected to /ws/alerts`;
+        };
+
+        ws.onclose = () => {
+            graphInfo.textContent = `Nodes: ${nodes.length} · Links: ${links.length} · Disconnected — retrying…`;
+            setTimeout(connectWS, 3000);
+        };
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data && Array.isArray(data.alerts)) {
+                data.alerts.forEach(buildGraphFromAlert);
+            }
+        };
+    }
+    connectWS();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>NOXVAULT – System Health Dashboard</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #020617;
+    --bg-elevated: #0a0f1f;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #22c55e;
+    --accent-soft: #052e16;
+    --critical: #ef4444;
+    --warn: #eab308;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  h1 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.4);
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .metric {
+    font-size: 26px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .sub {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .bar {
+    height: 10px;
+    border-radius: 6px;
+    background: #1e293b;
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin-top: 6px;
+  }
+  th, td {
+    padding: 6px 4px;
+    border-bottom: 1px solid #1e293b;
+  }
+  th {
+    text-transform: uppercase;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .status {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    display: inline-block;
+  }
+  .ok { background: #052e16; color: #86efac; border: 1px solid #22c55e; }
+  .warn { background: #422006; color: #fcd34d; border: 1px solid #eab308; }
+  .critical { background: #450a0a; color: #fecaca; border: 1px solid #ef4444; }
+</style>
+</head>
+<body>
+
+<h1>NOXVAULT – System Health Dashboard</h1>
+
+<div class="grid">
+
+  <!-- CPU -->
+  <div class="card">
+    <h2>CPU Usage</h2>
+    <div id="cpu-val" class="metric">0%</div>
+    <div class="sub">Processor load</div>
+    <div class="bar"><div id="cpu-bar" class="bar-fill"></div></div>
+  </div>
+
+  <!-- RAM -->
+  <div class="card">
+    <h2>Memory Usage</h2>
+    <div id="ram-val" class="metric">0%</div>
+    <div class="sub">RAM consumption</div>
+    <div class="bar"><div id="ram-bar" class="bar-fill"></div></div>
+  </div>
+
+  <!-- Disk -->
+  <div class="card">
+    <h2>Disk Usage</h2>
+    <div id="disk-val" class="metric">0%</div>
+    <div class="sub">Storage utilization</div>
+    <div class="bar"><div id="disk-bar" class="bar-fill"></div></div>
+  </div>
+
+  <!-- Network -->
+  <div class="card">
+    <h2>Network Throughput</h2>
+    <div class="metric" id="net-up">↑ 0 Mbps</div>
+    <div class="metric" id="net-down">↓ 0 Mbps</div>
+    <div class="sub">Upload / Download</div>
+  </div>
+
+  <!-- Temperature -->
+  <div class="card">
+    <h2>System Temperature</h2>
+    <div id="temp-val" class="metric">0°C</div>
+    <div class="sub">Thermal sensors</div>
+  </div>
+
+  <!-- Uptime -->
+  <div class="card">
+    <h2>System Uptime</h2>
+    <div id="uptime-val" class="metric">0h 0m</div>
+    <div class="sub">Agent heartbeat active</div>
+  </div>
+
+</div>
+
+<!-- PROCESS LIST -->
+<div class="card" style="margin-top:16px;">
+  <h2>Running Processes</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>PID</th>
+        <th>Name</th>
+        <th>CPU</th>
+        <th>RAM</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="proc-body"></tbody>
+  </table>
+</div>
+
+<script>
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function updateMetrics() {
+  const cpu = rand(5, 95);
+  const ram = rand(10, 90);
+  const disk = rand(20, 95);
+  const temp = rand(40, 85);
+  const up = rand(1, 300);
+  const down = rand(1, 500);
+
+  document.getElementById("cpu-val").textContent = cpu + "%";
+  document.getElementById("ram-val").textContent = ram + "%";
+  document.getElementById("disk-val").textContent = disk + "%";
+  document.getElementById("temp-val").textContent = temp + "°C";
+  document.getElementById("net-up").textContent = "↑ " + up + " Mbps";
+  document.getElementById("net-down").textContent = "↓ " + down + " Mbps";
+
+  document.getElementById("cpu-bar").style.width = cpu + "%";
+  document.getElementById("ram-bar").style.width = ram + "%";
+  document.getElementById("disk-bar").style.width = disk + "%";
+}
+
+function updateUptime() {
+  const now = Date.now();
+  const start = window._start || (window._start = now);
+  const diff = now - start;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  document.getElementById("uptime-val").textContent = `${h}h ${m}m`;
+}
+
+function updateProcesses() {
+  const tbody = document.getElementById("proc-body");
+  tbody.innerHTML = "";
+  for (let i = 0; i < 8; i++) {
+    const cpu = rand(0, 40);
+    const ram = rand(10, 300);
+    const status = cpu > 30 ? "critical" : cpu > 15 ? "warn" : "ok";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${rand(1000, 9999)}</td>
+      <td>process_${i}.exe</td>
+      <td>${cpu}%</td>
+      <td>${ram} MB</td>
+      <td><span class="status ${status}">${status.toUpperCase()}</span></td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+setInterval(updateMetrics, 1500);
+setInterval(updateUptime, 1000);
+setInterval(updateProcesses, 3000);
+
+updateMetrics();
+updateUptime();
+updateProcesses();
+</script>
+
+</body>
+</html>

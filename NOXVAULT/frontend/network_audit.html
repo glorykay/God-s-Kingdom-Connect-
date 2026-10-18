@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NOXVAULT – Network Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #0b0f19;
+      color: #e5e7eb;
+    }
+    h1 { margin-bottom: 5px; }
+    h2 { margin-top: 25px; color: #9ca3af; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .card {
+      background: #111827;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #1f2937;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 6px 8px; border-bottom: 1px solid #1f2937; }
+    th { color: #9ca3af; text-transform: uppercase; font-size: 12px; }
+    .status-up { color: #22c55e; }
+    .status-down { color: #ef4444; }
+  </style>
+</head>
+
+<body>
+
+<h1>NOXVAULT – Network Dashboard</h1>
+<p>Live network audit · Interfaces · Connections · Ports · Traffic</p>
+
+<div class="grid" id="summary"></div>
+
+<h2>Network Traffic</h2>
+<div class="card">
+  <canvas id="trafficChart" height="100"></canvas>
+</div>
+
+<h2>Interfaces</h2>
+<div class="card">
+  <table id="interfaces">
+    <thead>
+      <tr><th>Name</th><th>IPv4</th><th>MAC</th><th>Status</th><th>Speed</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Active Connections</h2>
+<div class="card">
+  <table id="connections">
+    <thead>
+      <tr><th>Local</th><th>Remote</th><th>Status</th><th>PID</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<h2>Open Ports</h2>
+<div class="card">
+  <table id="ports">
+    <thead><tr><th>Port</th></tr></thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8001";   // ⭐ FIXED — correct backend port
+
+async function loadAudit() {
+  try {
+    const res = await fetch(API + "/api/network-audit");
+    const data = await res.json();
+
+    document.getElementById("summary").innerHTML = `
+      <div class="card"><b>Default Gateway:</b><br>${data.default_gateway || "N/A"}</div>
+      <div class="card"><b>DNS Servers:</b><br>${data.dns_servers.join(", ")}</div>
+      <div class="card"><b>Network Health:</b><br>${data.network_health_score}</div>
+      <div class="card"><b>Risk Level:</b><br>${data.risk_level}</div>
+    `;
+
+    const ifaceBody = document.querySelector("#interfaces tbody");
+    ifaceBody.innerHTML = "";
+    data.interfaces.forEach(i => {
+      ifaceBody.innerHTML += `
+        <tr>
+          <td>${i.name}</td>
+          <td>${i.ipv4 || ""}</td>
+          <td>${i.mac || ""}</td>
+          <td class="${i.is_up ? "status-up" : "status-down"}">${i.is_up ? "UP" : "DOWN"}</td>
+          <td>${i.speed_mbps || ""}</td>
+        </tr>`;
+    });
+
+    const connBody = document.querySelector("#connections tbody");
+    connBody.innerHTML = "";
+    data.active_connections.slice(0, 80).forEach(c => {
+      connBody.innerHTML += `
+        <tr>
+          <td>${c.local || ""}</td>
+          <td>${c.remote || ""}</td>
+          <td>${c.status}</td>
+          <td>${c.pid}</td>
+        </tr>`;
+    });
+
+    const portBody = document.querySelector("#ports tbody");
+    portBody.innerHTML = "";
+    data.open_ports.forEach(p => {
+      portBody.innerHTML += `<tr><td>${p}</td></tr>`;
+    });
+
+  } catch (err) {
+    console.error("Network audit error:", err);
+  }
+}
+
+const ctx = document.getElementById("trafficChart").getContext("2d");
+const trafficChart = new Chart(ctx, {
+  type: "line",
+  data: { labels: [], datasets: [
+    { label: "Recv KB/s", borderColor: "#22c55e", data: [] },
+    { label: "Sent KB/s", borderColor: "#3b82f6", data: [] }
+  ]},
+  options: { animation: false }
+});
+
+async function loadTraffic() {
+  try {
+    const res = await fetch(API + "/api/network-traffic");
+    const data = await res.json();
+
+    const recv = (data.bytes_recv_per_sec / 1024).toFixed(2);
+    const sent = (data.bytes_sent_per_sec / 1024).toFixed(2);
+
+    const t = new Date().toLocaleTimeString();
+    trafficChart.data.labels.push(t);
+    trafficChart.data.datasets[0].data.push(recv);
+    trafficChart.data.datasets[1].data.push(sent);
+
+    if (trafficChart.data.labels.length > 30) {
+      trafficChart.data.labels.shift();
+      trafficChart.data.datasets[0].data.shift();
+      trafficChart.data.datasets[1].data.shift();
+    }
+
+    trafficChart.update();
+
+  } catch (err) {
+    console.error("Traffic fetch error:", err);
+  }
+}
+
+loadAudit();
+setInterval(loadAudit, 10000);
+setInterval(loadTraffic, 1000);
+</script>
+
+</body>
+</html>
